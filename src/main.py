@@ -15,7 +15,24 @@ with open(ANNOTATION_PATH) as f:
 
 imgs_annotated = doc["annotations"]["image"]
 
-def explore_channels(ids: list[int], imgs_annotated: list[dict], imgs_path: str):
+def explore_channels(ids: list[int], imgs_annotated: list[dict], imgs_path: str) -> None:
+    """ 
+    Explore collor channels of images.
+
+    Each image is shown separately (one at a time) in popup window and after closing it the next one is shown. 
+
+
+    Parameters:
+    -----------
+    ids: list[int]
+        list of IDs of images that will be shown
+
+    imgs_annotated: list[dict]
+        list of dictionaries that represent the images (from annotated data)
+
+    imgs_path: str
+        path to the folder where the actual images are stored
+    """
     channels = ["Red", "Green", "Blue"]
     for i in ids:
         img_ID = i 

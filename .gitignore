@@ -1,2 +1,3 @@
 ./data
 ./.vimproject
+./src/__pycache__
