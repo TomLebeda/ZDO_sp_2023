@@ -4,7 +4,7 @@ import json
 from matplotlib import pyplot as plt
 import numpy as np
 import skimage
-import typing
+from typing import List
 
 def explore_rgb_channels(ids: list[int], imgs_annotated: list[dict], imgs_path: str) -> None:
     """ 
@@ -38,7 +38,7 @@ def explore_rgb_channels(ids: list[int], imgs_annotated: list[dict], imgs_path: 
         fig.suptitle(f"Image: {img_fname} \n (ID {img_ID})")
         plt.show()
 
-def explore_hsv_channels(ids: list[int], imgs_annotated: list[dict], imgs_path: str) -> None:
+def explore_hsv_channels(ids: List[int], imgs_annotated: list[dict], imgs_path: str) -> None:
     """ 
     Explore HSV channels of images.
 
@@ -127,3 +127,11 @@ def explore_thresholding(ids: list[int], imgs_annotated: list[dict], imgs_path: 
             plt.imshow(imgc, cmap='gray')
             plt.imshow(mask, alpha = mask, cmap=channels[c]+"s")
         plt.show()
+
+def remove_border_areas(img: np.ndarray) -> np.ndarray:
+    img[:, 0] = 1.0
+    img[:, -1] = 1.0
+    img[0, :] = 1.0
+    img[-1, :] = 1.0
+    img = skimage.segmentation.flood_fill(img, (0, 0), 0, footprint=[[0, 1, 0], [1, 1, 1], [0, 1, 0]])
+    return img
