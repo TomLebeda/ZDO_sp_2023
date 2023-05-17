@@ -16,5 +16,7 @@ with open(ANNOTATION_PATH) as f:
 
 imgs_annotated = doc['annotations']['image']
 
-# explore_channels(list(range(50)), imgs_annotated, IMAGES_PATH)
-explore_thresholding(list(range(200)), imgs_annotated, IMAGES_PATH, 10)
+# explore_rgb_channels(list(range(50)), imgs_annotated, IMAGES_PATH)
+explore_hsv_channels(list(range(100)), imgs_annotated, IMAGES_PATH)
+# explore_thresholding(GOOD_IMAGES_ID, imgs_annotated, IMAGES_PATH, 10)
+
