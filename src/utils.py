@@ -4,7 +4,63 @@ import json
 from matplotlib import pyplot as plt
 import numpy as np
 import skimage
-from typing import List
+from typing import List, Tuple, Set
+import scipy
+import math
+
+
+class ControlPoint:
+    x: int
+    y: int
+    score: float
+    lines: Set['ControlPointLine']
+
+    def __init__(self, x: int, y: int, score: float) -> None:
+        self.x = x
+        self.y = y
+        self.score = score
+        self.lines = set()
+
+    def __str__(self) -> str:
+        return f'[{self.x}, {self.y}]: ({self.score})'
+
+
+class ControlPointLine:
+    p1: ControlPoint
+    p2: ControlPoint
+    score: float
+    map: np.ndarray
+    angle: float
+    length: float
+
+    def __init__(
+        self, p1: ControlPoint, p2: ControlPoint, score: float, map: np.ndarray
+    ) -> None:
+        self.p1 = p1
+        self.p2 = p2
+        self.score = score
+        self.map = map
+        self.angle = math.atan2((p1.y - p2.y), (p1.x - p2.x)) / np.pi
+        self.length = math.dist([p1.x, p1.y], [p2.x, p2.y])
+        if self.angle < 0:
+            self.angle += 1.0
+
+    def __str__(self) -> str:
+        return f'[{self.p1.x}, {self.p1.y}] -- [{self.p2.x}, {self.p2.y}]\t({self.score})'
+
+    def has_instersection(self, other: 'ControlPointLine') -> bool:
+        a1 = self.p1.x
+        a2 = self.p1.y
+        b1 = self.p2.x
+        b2 = self.p2.y
+        c1 = other.p1.x
+        c2 = other.p1.y
+        d1 = other.p2.x
+        d2 = other.p2.y
+        n = -c2 * d1 + a2 * (-c1 + d1) + a1 * (c2 - d2) + c1 * d2
+        m = b2 * (c1 - d1) + a2 * (-c1 + d1) + (a1 - b1) * (c2 - d2)
+        val = n / m
+        return val >= 0 and val <= 1
 
 
 def explore_rgb_channels(
@@ -206,7 +262,7 @@ def remove_border_areas(img: np.ndarray) -> np.ndarray:
     return img
 
 
-def extract_blob_area(hue_channel: np.ndarray) -> np.ndarray:
+def extract_blob_area(img: np.ndarray) -> np.ndarray:
     """
     Extracts a blob-like area from hue channel of image in HSV colorspace that should indicate where the scar is.
 
@@ -216,10 +272,14 @@ def extract_blob_area(hue_channel: np.ndarray) -> np.ndarray:
         Hue channel of HSV colorspace image (2D array) that will have its border-touching areas deleted
     """
     # thresholding
+    hue_channel = skimage.color.rgb2hsv(img)[:, :, 0]   # the bloby one
+    sat_channel = skimage.color.rgb2hsv(img)[:, :, 1]   # the sharp one
     hue = 1 * (hue_channel > 0.5)
 
     # label the areas
-    l1 = skimage.morphology.label(hue, connectivity=1)
+    l1 = skimage.morphology.binary_closing(hue, footprint=skimage.morphology.disk(8))
+    l1 = skimage.morphology.binary_erosion(l1, footprint=skimage.morphology.square(3))
+    l1 = skimage.morphology.label(l1, connectivity=1)
 
     # remove small objects and re-label
     removed = skimage.morphology.remove_small_objects(l1, 70)
@@ -235,4 +295,57 @@ def extract_blob_area(hue_channel: np.ndarray) -> np.ndarray:
         min(l3.shape) / 20
     )   # 20 was found experimentally as a good value for most images
     kernel = skimage.morphology.disk(kernel_size)
-    return skimage.morphology.binary_closing(l3, kernel)
+    mask = skimage.morphology.binary_closing(l3, kernel)
+    # print(f"mask size: {np.sum(mask)}, hue size: {hue.size}, ratio: {np.sum(mask) / hue.size}")
+    # if np.sum(mask) / hue.size < 0.2:
+    #     print(f"blob-mask is too small, fallback algorithm will be used")
+    #     hue = skimage.filters.gaussian(hue_channel, 3)
+    #     plt.subplot(2, 1, 1)
+    #     plt.imshow(hue_channel)
+    #     plt.subplot(2, 1, 2)
+    #     plt.imshow(hue)
+    #     plt.title("alternate hue")
+    #     plt.show()
+    #     l1 = skimage.morphology.label(hue, connectivity=1)
+    #     removed = skimage.morphology.remove_small_objects(l1, 70)
+    #     l2 = skimage.morphology.label(removed, connectivity=1)
+    return mask
+
+
+def get_control_points(
+    img: np.ndarray, blur_intensity: float, point_min_distance: float
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    hue = skimage.color.rgb2hsv(img)[:, :, 0]   # the bloby one
+    sat = skimage.color.rgb2hsv(img)[:, :, 1]   # the sharp one
+    blob = extract_blob_area(img)
+    masked = sat * blob
+    masked_contrast = blob * skimage.exposure.equalize_adapthist(sat)
+    blurred = skimage.filters.gaussian(masked, sigma=blur_intensity)
+    return (
+        skimage.feature.peak_local_max(
+            blurred, min_distance=point_min_distance, exclude_border=2
+        ),
+        blurred, masked, masked_contrast
+    )
+
+
+def compute_score(
+    img: np.ndarray, kernel: np.ndarray, x: int, y: int
+) -> float:
+    # TODO: check if the coordinates are too close to border and the kernel would oferflow
+    k = kernel.shape[0]
+    xmin = x - (k // 2)
+    xmax = x + (k // 2)
+    ymin = y - (k // 2)
+    ymax = y + (k // 2)
+    chunk = img[xmin:xmax, ymin:ymax]
+    score = np.sum(scipy.ndimage.convolve(chunk, kernel))
+    return score
+
+
+def get_gauss_kernel(radius: int) -> np.ndarray:
+    kernel = np.zeros((radius, radius))
+    kernel[radius // 2, radius // 2] = 1
+    scipy.ndimage.gaussian_filter(kernel, radius / 4, output=kernel)
+    kernel /= kernel[radius // 2, radius // 2]
+    return kernel
