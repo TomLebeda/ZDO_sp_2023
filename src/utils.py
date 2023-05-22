@@ -63,6 +63,31 @@ class ControlPointLine:
         return val >= 0 and val <= 1
 
 
+def get_perpendicular_point(
+    x1: int, y1: int, x2: int, y2: int, p1: int, p2: int
+) -> Tuple[int, int, bool]:
+    direction_vec = [x1 - x2, y1 - y2]
+    u1 = direction_vec[0]
+    u2 = direction_vec[1]
+    perpendicular_vec = [direction_vec[1], -direction_vec[0]]
+    v1 = perpendicular_vec[0]
+    v2 = perpendicular_vec[1]
+    if u1 == 0:
+        print(f"p1: {p1}")
+        print(f"p2: {p2}")
+        print(f"[x1, y1]: [{x1}, {y1}]")
+        print(f"[x2, y2]: [{x2}, {y2}]")
+        out_of_bound = p2 < min(y1, y2) or p2 > max(y1, y2)
+        return int(x1), int(p2), out_of_bound
+    t = (p2 * u1 - p1 * u2 + u2 * x1 - u1 * y1) / (u2 * v1 - u1 * v2)
+    s = (p1 + v1 * t - x1) / u1
+    T = [x1 + u1 * s, y1 + u2 * s]
+    out_of_bounds = False
+    if -s < 0 or -s > 1:
+        out_of_bounds = True
+    return int(T[0]), int(T[1]), out_of_bounds
+
+
 def explore_rgb_channels(
     ids: list[int], imgs_annotated: list[dict], imgs_path: str
 ) -> None:
@@ -277,8 +302,12 @@ def extract_blob_area(img: np.ndarray) -> np.ndarray:
     hue = 1 * (hue_channel > 0.5)
 
     # label the areas
-    l1 = skimage.morphology.binary_closing(hue, footprint=skimage.morphology.disk(8))
-    l1 = skimage.morphology.binary_erosion(l1, footprint=skimage.morphology.square(3))
+    l1 = skimage.morphology.binary_closing(
+        hue, footprint=skimage.morphology.disk(8)
+    )
+    l1 = skimage.morphology.binary_erosion(
+        l1, footprint=skimage.morphology.square(3)
+    )
     l1 = skimage.morphology.label(l1, connectivity=1)
 
     # remove small objects and re-label
@@ -291,24 +320,10 @@ def extract_blob_area(img: np.ndarray) -> np.ndarray:
         l3 = remove_border_areas(1 * (l3 > 0))
 
     # do some morphology magic to smooth and close the remaining areas
-    kernel_size = int(
-        min(l3.shape) / 20
-    )   # 20 was found experimentally as a good value for most images
+    # 20 was found experimentally as a good value for most images
+    kernel_size = int(min(l3.shape) / 20)
     kernel = skimage.morphology.disk(kernel_size)
     mask = skimage.morphology.binary_closing(l3, kernel)
-    # print(f"mask size: {np.sum(mask)}, hue size: {hue.size}, ratio: {np.sum(mask) / hue.size}")
-    # if np.sum(mask) / hue.size < 0.2:
-    #     print(f"blob-mask is too small, fallback algorithm will be used")
-    #     hue = skimage.filters.gaussian(hue_channel, 3)
-    #     plt.subplot(2, 1, 1)
-    #     plt.imshow(hue_channel)
-    #     plt.subplot(2, 1, 2)
-    #     plt.imshow(hue)
-    #     plt.title("alternate hue")
-    #     plt.show()
-    #     l1 = skimage.morphology.label(hue, connectivity=1)
-    #     removed = skimage.morphology.remove_small_objects(l1, 70)
-    #     l2 = skimage.morphology.label(removed, connectivity=1)
     return mask
 
 
@@ -325,7 +340,9 @@ def get_control_points(
         skimage.feature.peak_local_max(
             blurred, min_distance=point_min_distance, exclude_border=2
         ),
-        blurred, masked, masked_contrast
+        blurred,
+        masked,
+        masked_contrast,
     )
 
 
