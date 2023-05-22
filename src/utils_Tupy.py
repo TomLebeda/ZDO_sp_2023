@@ -17,10 +17,11 @@ def figure_result(img_gray, binary_image, img_original, lines,ID):
             2. obrázek po prahování
             3. originální obrázek s polylinama
     """
-    fig, axes = plt.subplots(1, 3, figsize=(12, 4))
+    fig, axes = plt.subplots(3, 1,figsize=(8, 8))
 
-    axes[0].imshow(img_gray, cmap=plt.cm.gray)
-    axes[0].set_title(f'Input image {ID}')
+    # axes[0].imshow(img_gray, cmap=plt.cm.gray)
+    axes[0].imshow(img_gray)
+    axes[0].set_title(f'Input image {ID}- HSV')
 
     # plt.subplot(132)
     axes[1].imshow(binary_image, cmap='gray', )
@@ -46,14 +47,21 @@ def figure_polyline(img_original, lines: list, axes=None, figure=True):
     # Vykreslení nalezených přímek
     axes.imshow(img_original, cmap='gray')
     axes.set_title('find polyline')
-    for line in lines:
-        p0, p1 = line
-        # print(line)
-        axes.plot((p0[0], p1[0]), (p0[1], p1[1]), '-r')
+    plot_lines(lines, axes)
 
     # Zobrazení výsledků
-    plt.tight_layout()
-    plt.show()
+    # plt.tight_layout()
+    # plt.show()
+
+
+def plot_lines(lines: list, axes=None) -> None:
+    for line in lines:
+        p0, p1 = line
+        if axes:
+            axes.plot((p0[0], p1[0]), (p0[1], p1[1]), '-r')
+        else:
+            plt.plot((p0[0], p1[0]), (p0[1], p1[1]), '-r')
+
 
 
 def figure_polyline_from_point(img_original, lines: list):
@@ -88,7 +96,7 @@ def figure_skeleton_contours(skeleton, img_original):
     plt.imshow(img_original, cmap='gray')
     for i in contours:
         plt.plot(i[:, 1], i[:, 0], '-r')
-    plt.show()
+    # plt.show()
 
 
 def figure_one_hough_line(skeleton, img_original, img_ID):
@@ -127,12 +135,12 @@ def figure_one_hough_line(skeleton, img_original, img_ID):
     plt.show()
 
 
-def dist_point_from_line(x, y, slope, intercept):
+def dist_point_from_line(x: float, y: float, slope, intercept):
     distance = np.abs(slope * x - y + intercept) / np.sqrt(slope**2 + 1)
     return distance
 
 
-def get_list_dist(x, y):
+def get_list_dist(x: list, y: list):
     slope, intercept, r_value, p_value, std_err = linregress(x, y)
     # print(f'std error: {std_err}')
     list_dist = list()
@@ -174,19 +182,38 @@ def remove_distant_points(x, y, list_dist):
     return x, y
 
 
-def plot_regress_line_with_scatter(x, y):
-    # Výpočet regrese
-    slope, intercept, r_value, p_value, std_err = linregress(x, y)
-    # Vykreslení regresní přímky
-    plt.plot(x, intercept + slope * np.array(x), color='red', label='Regression Line')
+def get_lines_points(x: list, y: list) -> list[list[list: int, float]]:
+    ''' Vraci listu listu se startovacími/konečnými body liny.'''
+    ROUND_DECIMALS = 2
+    incision_polyline = list()
+    for i in range(len(x)):
+        slope, intercept, r_value, p_value, std_err = linregress(x[i], y[i])
+
+        # urceni startovaciho bodu polyline [x_start, y_start]
+        index_min = x[i].index(min(x[i]))
+        x_start = x[i][index_min]
+        y_start = round(intercept + slope * x_start, ROUND_DECIMALS)
+
+        # urceni koncoveho bodu polyline [x_end, y_end]
+        index_max = x[i].index(max(x[i]))
+        x_end = x[i][index_max]
+        y_end = round(intercept + slope * x_end, ROUND_DECIMALS)
+
+        incision_polyline.append([[y_start, x_start], [y_end, x_end]])
+    return incision_polyline
 
 
-def plot_img_with_regress_line_and_scatter(x: list, y: list, img_original, img_ID: int) -> None:
+def plot_regress_line(incision_polyline):
+    line_array = np.array(incision_polyline)
+    plt.plot(line_array[:, 1], line_array[:, 0], color='red', label='Regression Line')
+
+
+def plot_img_with_regress_line(incision_polyline, img_original, img_ID: int) -> None:
     # Vykreslení originalniho obrazku
     plt.imshow(img_original, cmap='gray')
 
-    for i in range(len(x)):
-        plot_regress_line_with_scatter(x[i], y[i]) # Vykreslení nalezených přímek
+    for i in range(len(incision_polyline)):
+        plot_regress_line(incision_polyline[i]) # Vykreslení nalezených přímek
     plt.legend()
     # plt.title(f'Input image ID: {img_ID}, line: {len(x)}')
 
@@ -232,3 +259,21 @@ def get_best_2_lines_with_crit_J(x: list, y: list) -> float:
         criterial = sum(list_dist1) + sum(list_dist2)
         crit_J.append(criterial)
     return crit_J
+
+
+def save_figure(file_name: str) -> None:
+    plt.axis('off')
+    plt.legend().set_visible(False)
+    plt.savefig(file_name, format="pdf", bbox_inches="tight", pad_inches=0)
+
+
+def init_data():
+    data = dict()
+    data['filename'] = ''
+    data['incision_polyline'] = list(list())
+    data['crossing_positions'] = list()
+    data['crossing_angles'] = list()
+    return data
+
+
+
