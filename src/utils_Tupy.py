@@ -17,10 +17,11 @@ def figure_result(img_gray, binary_image, img_original, lines,ID):
             2. obrázek po prahování
             3. originální obrázek s polylinama
     """
-    fig, axes = plt.subplots(1, 3, figsize=(12, 4))
+    fig, axes = plt.subplots(3, 1,figsize=(8, 8))
 
-    axes[0].imshow(img_gray, cmap=plt.cm.gray)
-    axes[0].set_title(f'Input image {ID}')
+    # axes[0].imshow(img_gray, cmap=plt.cm.gray)
+    axes[0].imshow(img_gray)
+    axes[0].set_title(f'Input image {ID}- HSV')
 
     # plt.subplot(132)
     axes[1].imshow(binary_image, cmap='gray', )
@@ -46,14 +47,21 @@ def figure_polyline(img_original, lines: list, axes=None, figure=True):
     # Vykreslení nalezených přímek
     axes.imshow(img_original, cmap='gray')
     axes.set_title('find polyline')
-    for line in lines:
-        p0, p1 = line
-        # print(line)
-        axes.plot((p0[0], p1[0]), (p0[1], p1[1]), '-r')
+    plot_lines(lines, axes)
 
     # Zobrazení výsledků
-    plt.tight_layout()
-    plt.show()
+    # plt.tight_layout()
+    # plt.show()
+
+
+def plot_lines(lines: list, axes=None) -> None:
+    for line in lines:
+        p0, p1 = line
+        if axes:
+            axes.plot((p0[0], p1[0]), (p0[1], p1[1]), '-r')
+        else:
+            plt.plot((p0[0], p1[0]), (p0[1], p1[1]), '-r')
+
 
 
 def figure_polyline_from_point(img_original, lines: list):
@@ -88,7 +96,7 @@ def figure_skeleton_contours(skeleton, img_original):
     plt.imshow(img_original, cmap='gray')
     for i in contours:
         plt.plot(i[:, 1], i[:, 0], '-r')
-    plt.show()
+    # plt.show()
 
 
 def figure_one_hough_line(skeleton, img_original, img_ID):
@@ -251,3 +259,21 @@ def get_best_2_lines_with_crit_J(x: list, y: list) -> float:
         criterial = sum(list_dist1) + sum(list_dist2)
         crit_J.append(criterial)
     return crit_J
+
+
+def save_figure(file_name: str) -> None:
+    plt.axis('off')
+    plt.legend().set_visible(False)
+    plt.savefig(file_name, format="pdf", bbox_inches="tight", pad_inches=0)
+
+
+def init_data():
+    data = dict()
+    data['filename'] = ''
+    data['incision_polyline'] = list(list())
+    data['crossing_positions'] = list()
+    data['crossing_angles'] = list()
+    return data
+
+
+
