@@ -126,7 +126,7 @@ def find_incisions(file_path: str, SAVE: bool, PRINT: bool):
 
     if PRINT:
         # figure_polyline(img_original, lines) # good for 14 (20,10,2)
-        figure_result(img_hsv, skeleton, img_original, lines, img_ID)
+        figure_result(img_hsv,binary_image, skeleton, img_original, lines, img_ID)
         # figure_skeleton_contours(skeleton, img_original)
         # figure_one_hough_line(skeleton, img_original, img_ID)         # good for 15,14 with opening dia 2 before skeleton
         # plot_histogram(list_dist)                                     # vykresleni histogramu vzdalenosti
@@ -134,35 +134,37 @@ def find_incisions(file_path: str, SAVE: bool, PRINT: bool):
 
         # --------------------------------------------------------------------------------------
         fig, axes = plt.subplots(2, 1, figsize=(8, 8))
+        fig.suptitle(f'Input image: {img_ID}\n\ndiff = {diff_J:.2f}')
         # ----- Vykresleni 2 line -----
         plt.subplot(211)
         plt.scatter(x, y, color='blue', label='Data')  # Vykreslení bodů
         plot_img_with_regress_line(incision_polyline2, img_original, img_ID)
-        plt.title(f'Input image ID: {img_ID}, line: 2, J_crit = {min_J_2line:.2f}, diff = {diff_J:.2f}')
+        plt.title(f'line: 2, J_crit = {min_J_2line:.2f}')
 
         # ----- Vykresleni 1 line -----
         plt.subplot(212)
         plt.scatter(x, y, color='blue', label='Data')  # Vykreslení bodů
         plot_img_with_regress_line(incision_polyline1, img_original, img_ID)
-        plt.title(f'Input image ID: {img_ID}, line: 1, J_crit = {min_J_1line:.2f}')
+        plt.title(f'line: 1, J_crit = {min_J_1line:.2f}')
 
         # Zobrazení grafu
         # plt.show()
 
         # --------------------------------------------------------------------------------------
         fig, axes = plt.subplots(2, 1, figsize=(8, 8))
+        fig.suptitle(f'Input image: {img_ID}')
         # ----- Vykresleni vysledku s scatter -----
         plt.subplot(211)
         plt.scatter(x, y, color='blue', label='Data')  # Vykreslení bodů
         plot_img_with_regress_line(result_incision_polyline, img_original, img_ID)
         plt.legend().set_visible(False)
-        plt.title(f'Result: incision polyline with points, Input image ID: {img_ID}')
+        plt.title(f'Result: incision polyline with points')
 
         # ----- Vykresleni vysledku bez scatter -----
         plt.subplot(212)
         plot_img_with_regress_line(result_incision_polyline, img_original, img_ID)
         plt.legend().set_visible(False)
-        plt.title(f'Result: incision polyline, Input image ID: {img_ID}')
+        plt.title(f'Result: incision polyline')
 
         # Zobrazení grafu
         plt.show()
@@ -226,14 +228,17 @@ def find_incisions(file_path: str, SAVE: bool, PRINT: bool):
         plt.imshow(img_original, cmap='gray')
         plot_lines(lines)
         save_figure(f"figure/{img_ID:03d}_hough_lines.pdf")
+        plt.close('all')
 
     return 'correct'
 
 
 def run_find_incisions(file_path: str, save_fig: bool, verbose: bool):
-    MAX_I = 5
-    i = 0
-    STOP = False
+    global RESULT  # globalni promenna, vrati vysledek
+    MAX_I = 5      # maximalni počet opakovani hledani jizvy (vždy jiny poc. podminky)
+    i = 0          # pocet aktualnich pokusu
+    STOP = False   # promenna pro zastaveni True/False
+
     while True:
         if i == MAX_I:
             print(' - ERROR: Sorry! Incisions not found :(')
@@ -246,15 +251,18 @@ def run_find_incisions(file_path: str, save_fig: bool, verbose: bool):
             if command == 'correct':
                 print('Incisions successfully found.')
                 return RESULT
-                # break
+
             elif command == 'try_again':
                 print('\t---> WARNING: try find again!')
                 i += 1
+
             elif command == 'exit':
                 STOP = True
+
         except KeyboardInterrupt:
             print('Manually kill.')
             exit(1)
+
         except:
             print('\t---> try find again! k')
             i += 1
