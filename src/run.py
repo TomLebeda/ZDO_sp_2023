@@ -1,6 +1,7 @@
 import argparse
-from find_incision import *
+# from find_incision import *
 import json
+from main import *
 
 # Create the argument parser
 parser = argparse.ArgumentParser()
@@ -32,7 +33,8 @@ print(f"Save figure:\t {save_fig}")
 print(f"Input files:\t {input_files}")
 print('-' * CHAR_LEN)
 
-FOLDER = './input_images/'
+# FOLDER = './input_images/'
+FOLDER = ""
 
 
 output_data = list()
@@ -45,8 +47,8 @@ for file_name in input_files:
         data['incision_polyline'] = run_find_incisions(FOLDER + file_name, save_fig, verbose)
     except KeyboardInterrupt:
         print('Manually kill.')
-    except:
-        print('END: kill')
+    except Exception as e:
+        print(f'END: {e}')
         exit(1)
 
     output_data.append(data)

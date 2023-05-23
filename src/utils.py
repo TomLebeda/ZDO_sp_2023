@@ -308,10 +308,10 @@ def extract_blob_area(img: np.ndarray) -> np.ndarray:
     l1 = skimage.morphology.binary_erosion(
         l1, footprint=skimage.morphology.square(3)
     )
-    l1 = skimage.morphology.label(l1, connectivity=1)
+    l1, c1 = skimage.morphology.label(l1, connectivity=1, return_num=True)
 
     # remove small objects and re-label
-    removed = skimage.morphology.remove_small_objects(l1, 70)
+    removed = skimage.morphology.remove_small_objects(l1, 70) if c1 > 1 else l1
     l2 = skimage.morphology.label(removed, connectivity=1)
 
     # remove border areas
