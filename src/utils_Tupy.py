@@ -11,23 +11,29 @@ from scipy.stats import linregress
 from utils import extract_blob_area
 
 
-def figure_result(img_gray, binary_image, img_original, lines,ID):
+def figure_result(img_gray, binary_image, skeleton, img_original, lines,ID):
     """ Vykresí 3 obrázky v 1 figure:
             1. obrázek v šedi
             2. obrázek po prahování
-            3. originální obrázek s polylinama
+            3. obrázek skeletonizace
+            4. originální obrázek s polylinama
     """
-    fig, axes = plt.subplots(3, 1,figsize=(8, 8))
+    fig, axes = plt.subplots(4, 1, figsize=(6, 10))
 
     # axes[0].imshow(img_gray, cmap=plt.cm.gray)
     axes[0].imshow(img_gray)
-    axes[0].set_title(f'Input image {ID}- HSV')
+    axes[0].set_title('HSV image')
 
     # plt.subplot(132)
     axes[1].imshow(binary_image, cmap='gray', )
-    axes[1].set_title('tresholded')
+    axes[1].set_title('binary image')
 
-    figure_polyline(img_original, lines, axes[2], False)
+    # plt.subplot(132)
+    axes[2].imshow(skeleton, cmap='gray', )
+    axes[2].set_title('skeleton')
+
+    figure_polyline(img_original, lines, axes[3], False)
+    fig.suptitle(f'Input image: {ID}')
 
 
 def figure_polyline(img_original, lines: list, axes=None, figure=True):
@@ -187,7 +193,11 @@ def get_lines_points(x: list, y: list) -> list[list[list: int, float]]:
     ROUND_DECIMALS = 2
     incision_polyline = list()
     for i in range(len(x)):
-        slope, intercept, r_value, p_value, std_err = linregress(x[i], y[i])
+        try:
+            slope, intercept, r_value, p_value, std_err = linregress(x[i], y[i])
+        except RuntimeWarning:
+            print('Skipped 2 line -> same as 1 line.')
+            continue
 
         # urceni startovaciho bodu polyline [x_start, y_start]
         index_min = x[i].index(min(x[i]))
@@ -262,8 +272,10 @@ def get_best_2_lines_with_crit_J(x: list, y: list) -> float:
 
 
 def save_figure(file_name: str) -> None:
-    plt.axis('off')
-    plt.legend().set_visible(False)
+    '''Uloží figure'''
+    plt.axis('off')                         # vypne osy
+    if plt.gca().get_legend() is not None:  # odstrani legendu pokud existuje
+        plt.gca().get_legend().remove()
     plt.savefig(file_name, format="pdf", bbox_inches="tight", pad_inches=0)
 
 

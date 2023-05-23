@@ -18,6 +18,7 @@ from skimage.measure import ransac
 from skimage.transform import PolynomialTransform
 from scipy.stats import linregress
 from statistics import mean
+import os
 
 
 
@@ -25,15 +26,14 @@ ANNOTATION_PATH = './data/annotations.xml'
 IMAGES_PATH = './data/images/default/'
 GOOD_IMAGES_ID = [14, 17, 18, 20, 24, 28, 33, 38, 44, 45, 52, 56, 57]
 LIMIT_CRIT_J = 25
+SAVE = True
+PRINT = True
 
 with open(ANNOTATION_PATH) as f:
     doc = xmltodict.parse(f.read())
 
 imgs_annotated = doc['annotations']['image']
-print(len(imgs_annotated))
-# explore_rgb_channels(list(range(50)), imgs_annotated, IMAGES_PATH)
-# explore_hsv_channels(list(range(100)), imgs_annotated, IMAGES_PATH)
-# explore_thresholding(GOOD_IMAGES_ID, imgs_annotated, IMAGES_PATH, 10)
+
 #
 for img_ID in range(100):
     # img_ID = 70
@@ -130,113 +130,120 @@ for img_ID in range(100):
     print(f'Incision polyline2:\t {incision_polyline2}')
     print(f'Incision polyline1:\t {incision_polyline1}')
 
-
-    # ****************************************************************************************
-    # ****                             V Y K R E S L E N I                                ****
-    # ****************************************************************************************
-    # TODO: dat podminku pro vykresleni pro parametr
-
-    # figure_polyline(img_original, lines) # good for 14 (20,10,2)
-    # figure_result(img_hsv, skeleton, img_original, lines, img_ID)
-    # figure_skeleton_contours(skeleton, img_original)
-    # figure_one_hough_line(skeleton, img_original, img_ID)         # good for 15,14 with opening dia 2 before skeleton
-    # plot_histogram(list_dist)                                     # vykresleni histogramu vzdalenosti
-    # figure_polyline_from_point(img_original, sorted_list)         # vykresli linu ze serazenich bodu podle x
-
+    # vyber 1 nebo 2 line podle kriteria
     if diff_J > LIMIT_CRIT_J:
         result_incision_polyline = incision_polyline2
     else:
         result_incision_polyline = incision_polyline1
 
-    #--------------------------------------------------------------------------------------
-    # fig, axes = plt.subplots(2, 1, figsize=(8, 8))
-    # # ----- Vykresleni 2 line -----
-    # plt.subplot(211)
-    # plt.scatter(x, y, color='blue', label='Data') # Vykreslení bodů
-    # plot_img_with_regress_line(incision_polyline2, img_original, img_ID)
-    # plt.title(f'Input image ID: {img_ID}, line: 2, J_crit = {min_J_2line:.2f}, diff = {diff_J:.2f}')
-    #
-    # # ----- Vykresleni 1 line -----
-    # plt.subplot(212)
-    # plt.scatter(x, y, color='blue', label='Data') # Vykreslení bodů
-    # plot_img_with_regress_line(incision_polyline1, img_original, img_ID)
-    # plt.title(f'Input image ID: {img_ID}, line: 1, J_crit = {min_J_1line:.2f}')
-    #
-    #
-    # # Zobrazení grafu
-    # # plt.show()
-    #
-    # #--------------------------------------------------------------------------------------
-    # fig, axes = plt.subplots(2, 1, figsize=(8, 8))
-    # # ----- Vykresleni vysledku s scatter -----
-    # plt.subplot(211)
-    # plt.scatter(x, y, color='blue', label='Data') # Vykreslení bodů
-    # plot_img_with_regress_line(result_incision_polyline, img_original, img_ID)
-    # plt.legend().set_visible(False)
-    # plt.title(f'Result: incision polyline with points, Input image ID: {img_ID}')
-    #
-    # # ----- Vykresleni vysledku bez scatter -----
-    # plt.subplot(212)
-    # plot_img_with_regress_line(result_incision_polyline, img_original, img_ID)
-    # plt.legend().set_visible(False)
-    # plt.title(f'Result: incision polyline, Input image ID: {img_ID}')
-    #
-    #
-    # # Zobrazení grafu
-    # plt.show()
+
+    # ****************************************************************************************
+    # ****                             V Y K R E S L E N I                                ****
+    # ****************************************************************************************
+    if PRINT:
+        # figure_polyline(img_original, lines) # good for 14 (20,10,2)
+        figure_result(img_hsv, binary_image, skeleton, img_original, lines, img_ID)
+        # figure_skeleton_contours(skeleton, img_original)
+        # figure_one_hough_line(skeleton, img_original, img_ID)         # good for 15,14 with opening dia 2 before skeleton
+        # plot_histogram(list_dist)                                     # vykresleni histogramu vzdalenosti
+        # figure_polyline_from_point(img_original, sorted_list)         # vykresli linu ze serazenich bodu podle x
+
+        # --------------------------------------------------------------------------------------
+        fig, axes = plt.subplots(2, 1, figsize=(8, 8))
+        fig.suptitle(f'Input image: {img_ID}\n\ndiff = {diff_J:.2f}')
+        # ----- Vykresleni 2 line -----
+        plt.subplot(211)
+        plt.scatter(x, y, color='blue', label='Data')  # Vykreslení bodů
+        plot_img_with_regress_line(incision_polyline2, img_original, img_ID)
+        plt.title(f'line: 2, J_crit = {min_J_2line:.2f}')
+
+        # ----- Vykresleni 1 line -----
+        plt.subplot(212)
+        plt.scatter(x, y, color='blue', label='Data')  # Vykreslení bodů
+        plot_img_with_regress_line(incision_polyline1, img_original, img_ID)
+        plt.title(f'line: 1, J_crit = {min_J_1line:.2f}')
+
+        # Zobrazení grafu
+        # plt.show()
+
+        # --------------------------------------------------------------------------------------
+        fig, axes = plt.subplots(2, 1, figsize=(8, 8))
+        fig.suptitle(f'Input image: {img_ID}')
+        # ----- Vykresleni vysledku s scatter -----
+        plt.subplot(211)
+        plt.scatter(x, y, color='blue', label='Data')  # Vykreslení bodů
+        plot_img_with_regress_line(result_incision_polyline, img_original, img_ID)
+        plt.legend().set_visible(False)
+        plt.title(f'Result: incision polyline with points')
+
+        # ----- Vykresleni vysledku bez scatter -----
+        plt.subplot(212)
+        plot_img_with_regress_line(result_incision_polyline, img_original, img_ID)
+        plt.legend().set_visible(False)
+        plt.title(f'Result: incision polyline')
+
+        # Zobrazení grafu
+        plt.show()
 
     #--------------------------------------------------------------------------------------
     # -----              V Y K R E S L E N I   P R O    U L O Z E N I                 -----
     #--------------------------------------------------------------------------------------
 
-    MARKER_SIZE = 12
-    LINE_WIDTH = 0.2
 
-    # ----- Ulozeni 2 line -----
-    plt.figure(frameon=False)
-    plt.scatter(x, y, color='blue', s=MARKER_SIZE, linewidths=LINE_WIDTH, edgecolor ="black") # Vykreslení bodů
-    plot_img_with_regress_line(incision_polyline2, img_original, img_ID)
-    save_figure(f"figure/{img_ID:03d}_2line.pdf")
+    if SAVE:
+        # pokud neexistuje složka 'figure' -> vytvori se
+        if not os.path.exists('figure'):
+            os.mkdir('figure')
 
-    # ----- Ulozeni 1 line -----
-    plt.clf()
-    plt.scatter(x, y, color='blue', s=MARKER_SIZE, linewidths=LINE_WIDTH, edgecolor ="black") # Vykreslení bodů
-    plot_img_with_regress_line(incision_polyline1, img_original, img_ID)
-    save_figure(f"figure/{img_ID:03d}_1line.pdf")
+        MARKER_SIZE = 12     # SCATTER PLOT: velikost markeru
+        LINE_WIDTH = 0.2     # SCATTER PLOT: sirka okraje
 
-    # ----- Ulozeni vysledku -----
-    plt.clf()
-    plot_img_with_regress_line(result_incision_polyline, img_original, img_ID)
-    save_figure(f"figure/{img_ID:03d}_result.pdf")
+        # ----- Ulozeni 2 line -----
+        plt.figure(frameon=False)  # figure bez ramecku
+        plt.scatter(x, y, color='blue', s=MARKER_SIZE, linewidths=LINE_WIDTH, edgecolor ="black") # Vykreslení bodů
+        plot_img_with_regress_line(incision_polyline2, img_original, img_ID)
+        save_figure(f"figure/{img_ID:03d}_2line.pdf")
 
-    # ----- ulozeni vstupniho obrazku -----
-    plt.clf()
-    plt.imshow(img_original, cmap='gray')
-    save_figure(f"figure/{img_ID:03d}_original_image.pdf")
+        # ----- Ulozeni 1 line -----
+        plt.clf()      # nemusim vytvaret novou -> staci vymazat predchozi
+        plt.scatter(x, y, color='blue', s=MARKER_SIZE, linewidths=LINE_WIDTH, edgecolor ="black") # Vykreslení bodů
+        plot_img_with_regress_line(incision_polyline1, img_original, img_ID)
+        save_figure(f"figure/{img_ID:03d}_1line.pdf")
 
-    # ----- ulozeni obrazku v RGB2HSV -----
-    plt.clf()
-    plt.imshow(img_hsv)
-    save_figure(f"figure/{img_ID:03d}_hsv_image.pdf")
+        # ----- Ulozeni vysledku -----
+        plt.clf()
+        plot_img_with_regress_line(result_incision_polyline, img_original, img_ID)
+        save_figure(f"figure/{img_ID:03d}_result.pdf")
 
-    # ----- ulozeni skeletonu -----
-    plt.clf()
-    plt.imshow(skeleton, cmap='gray')
-    save_figure(f"figure/{img_ID:03d}_skeleton.pdf")
+        # ----- ulozeni vstupniho obrazku -----
+        plt.clf()
+        plt.imshow(img_original, cmap='gray')
+        save_figure(f"figure/{img_ID:03d}_original_image.pdf")
 
-    # ----- ulozeni binarniho obrazku -----
-    plt.clf()
-    plt.imshow(binary_image, cmap='gray')
-    save_figure(f"figure/{img_ID:03d}_binary_image.pdf")
+        # ----- ulozeni obrazku v RGB2HSV -----
+        plt.clf()
+        plt.imshow(img_hsv)
+        save_figure(f"figure/{img_ID:03d}_hsv_image.pdf")
 
-    # ----- ulozeni binarniho obrazku -----
-    plt.clf()
-    figure_skeleton_contours(skeleton, img_original)
-    save_figure(f"figure/{img_ID:03d}_skeleton_contours.pdf")
+        # ----- ulozeni skeletonu -----
+        plt.clf()
+        plt.imshow(skeleton, cmap='gray')
+        save_figure(f"figure/{img_ID:03d}_skeleton.pdf")
 
-    # ----- ulozeni Hough lines -----
-    plt.clf()
-    plt.imshow(img_original, cmap='gray')
-    plot_lines(lines)
-    save_figure(f"figure/{img_ID:03d}_hough_lines.pdf")
+        # ----- ulozeni binarniho obrazku -----
+        plt.clf()
+        plt.imshow(binary_image, cmap='gray')
+        save_figure(f"figure/{img_ID:03d}_binary_image.pdf")
+
+        # ----- ulozeni binarniho obrazku -----
+        plt.clf()
+        figure_skeleton_contours(skeleton, img_original)
+        save_figure(f"figure/{img_ID:03d}_skeleton_contours.pdf")
+
+        # ----- ulozeni Hough lines -----
+        plt.clf()
+        plt.imshow(img_original, cmap='gray')
+        plot_lines(lines)
+        save_figure(f"figure/{img_ID:03d}_hough_lines.pdf")
+        plt.close('all')
 
