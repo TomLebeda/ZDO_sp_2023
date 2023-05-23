@@ -3,8 +3,7 @@ from typing import Tuple
 import matplotlib.pyplot as plt
 import skimage
 from skimage import measure
-from skimage.transform import (hough_line, hough_line_peaks,
-                               probabilistic_hough_line)
+from skimage.transform import (hough_line, hough_line_peaks)
 import numpy as np
 from scipy.stats import linregress
 

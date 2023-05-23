@@ -1,23 +1,12 @@
-import xmltodict
-from pprint import pprint
-import json
-from matplotlib import pyplot as plt
-import numpy as np
+# Coding: utf-8
+
 from utils import *
 from utils_Tupy import *
 import skimage.io
-import typing
-from skimage.transform import (hough_line, hough_line_peaks,
-                               probabilistic_hough_line)
+from skimage.transform import probabilistic_hough_line
 from skimage import filters
-from skimage.feature import canny
 import skimage.transform
-from skimage import measure
-from skimage import io, morphology
-from skimage.measure import ransac
-from skimage.transform import PolynomialTransform
-from scipy.stats import linregress
-from statistics import mean
+from skimage import morphology
 import os
 
 

@@ -1,3 +1,5 @@
+# Coding: utf-8
+
 import argparse
 from find_incision import *
 import json

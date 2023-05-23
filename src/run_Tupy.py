@@ -19,6 +19,7 @@ output_file = args.output_file
 verbose = args.verbose
 save_fig = args.save_fig
 input_files = args.input_files
+
 CHAR_LEN = 30
 
 # Check if the output file format is JSON
