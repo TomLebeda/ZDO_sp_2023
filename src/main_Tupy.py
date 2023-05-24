@@ -38,7 +38,7 @@ for img_ID in range(100):
     # ****                              A L G O R I T M U S                               ****
     # ****************************************************************************************
 
-    # Prahovani - Otsu metoda
+    # Prahovani - Otsuova metoda
     threshold = filters.threshold_otsu(img_hsv)    # prah
     binary_image = img_hsv > threshold             # naprahovany obrazek
 

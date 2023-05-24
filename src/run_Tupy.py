@@ -4,6 +4,10 @@ import argparse
 from find_incision import *
 import json
 
+# ****************************************************************************************
+# ****                           P A R S I N G   A R G S                              ****
+# ****************************************************************************************
+
 # Create the argument parser
 parser = argparse.ArgumentParser()
 parser.add_argument('output_file', help='output file path (JSON format)')
@@ -20,7 +24,7 @@ verbose = args.verbose
 save_fig = args.save_fig
 input_files = args.input_files
 
-CHAR_LEN = 30
+CHAR_LEN = 30   # only for print to the console
 
 # Check if the output file format is JSON
 if not output_file.endswith('.json'):
@@ -35,13 +39,18 @@ print(f"Save figure:\t {save_fig}")
 print(f"Input files:\t {input_files}")
 print('-' * CHAR_LEN)
 
-FOLDER = './input_images/'
+# ****************************************************************************************
+# ****                                 A L G O R I T M H                              ****
+# ****************************************************************************************
 
-output_data = list()
+FOLDER = './input_images/'   # folder for input images in args
 
+output_data = list()         # init final output data for all image in args
+
+# loop for all images in args
 for file_name in input_files:
 
-    data = init_data()
+    data = init_data()       # init data for actually image
     data['filename'] = file_name
     try:
         data['incision_polyline'] = run_find_incisions(FOLDER + file_name, save_fig, verbose)
@@ -49,13 +58,13 @@ for file_name in input_files:
         # data['crossing_angles'] = ... prepare to connect
     except KeyboardInterrupt:
         print('Manually kill.')
-    except:
-        print('END: kill')
+    except Exception as e:
+        print(f'END: {e}')
         exit(1)
 
     output_data.append(data)
 
-
+# save output data
 with open(output_file, 'w', encoding='utf-8') as f:
     json.dump(output_data, f, ensure_ascii=False, indent=4)
     print(f'\nOutput data successfully saved: \t{output_file}\n')

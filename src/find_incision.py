@@ -13,7 +13,35 @@ RESULT = None       # vysledne nalezene polyliny jizvy -> retunn metoda 'run_fin
 LIMIT_CRIT_J = 25   # hranice kriterialni funkce pro 1 linu, jinak > 2 liny
 
 
-def find_incisions(file_path: str, SAVE: bool, PRINT: bool):
+def find_incisions(file_path: str, SAVE: bool, PRINT: bool) -> str:
+    """
+    Metoda se snaží najít nejlepší aproximaci řezu (jizvy) podle krit. funkce J (1line, 2line).
+
+    PARAMETRY:
+    ---------------------------
+        VSTUPY:
+            - file_path: str   cesta k souboru
+            - SAVE: bool       ukldani obrazku do slozky 'figure' (True/False)
+            - PRINT: bool      podrobny (verbose) rezim s vizualizaci (True/False)
+        VYSTUPY:
+            - 'exit':          chyba -> ukonceni procesu (např. neexistuje cesta k souboru)
+            - 'try_again':     nepovedlo se najít dostatečný počet bodu na aproximaci -> znova s jinymi poč. podmínkami
+            - 'correct':       našla se uspešne aproximace řezu (jizvy) -> výsledek uložen do glob. prom. 'RESULT'
+
+    POPIS ALGORITMU:
+    ---------------------------
+         1. Převod obrázku z RGB do HSV
+         2. Prahování (práh = Otsu)
+         3. Morfologická operace -> skeletonizace
+         4. Houghova transformace -> čáry -> body (začátek a konec)
+         5. Lineární regrese (aproximace bodů přímkou)
+         6. Zpracování a filtrace vzdálených bodů od přímky podle `threshold`
+         7. Přepočet přímky po odstranění vzdálených bodů (`1line`)
+         8. Výpočet lomené čáry -> aproximace jizvy 2 přímkami (`2line`)
+         9. Finální reprezentace jizvy - výběr výsledku podle kriteriální funkce `J`
+    """
+
+    # Nacteni obrazku
     try:
         img_original = skimage.io.imread(file_path)
         img_ID = file_path.split('/')[-1]
@@ -22,9 +50,7 @@ def find_incisions(file_path: str, SAVE: bool, PRINT: bool):
         print(f'ERROR: input dont exist:\t{file_path}')
         return 'exit'
 
-    img = skimage.color.rgb2hsv(img_original)
-    # gray = skimage.color.rgb2hsv(img_original)
-    # blob = extract_blob_area(img)
+    img = skimage.color.rgb2hsv(img_original)     # prevod z RGB do HSV (Hue, Saturation, Value)
 
     # hsv: value gray
     img_hsv = (0.15 * img[:, :, 0] + 0.7 * img[:, :, 0] * img[:, :, 1] + 2 * img[:, :, 1] + -0.7 * img[:, :,2])
@@ -54,7 +80,7 @@ def find_incisions(file_path: str, SAVE: bool, PRINT: bool):
     # lines = probabilistic_hough_line(binary_image, threshold=20, line_length=5, line_gap=2) # (20,5,2)
 
     # ------------------ JEDNOTLIVE BODY ----------------------
-    ''' Z lines vybere jednotlive body a seradi podle souradnice x.'''
+    # *** Z lines vybere jednotlive body a seradi podle souradnice x.***
     point_list = list()
     for line in lines:
         for point in line:
@@ -128,7 +154,7 @@ def find_incisions(file_path: str, SAVE: bool, PRINT: bool):
         # figure_polyline(img_original, lines) # good for 14 (20,10,2)
         figure_result(img_hsv,binary_image, skeleton, img_original, lines, img_ID)
         # figure_skeleton_contours(skeleton, img_original)
-        # figure_one_hough_line(skeleton, img_original, img_ID)         # good for 15,14 with opening dia 2 before skeleton
+        # figure_one_hough_line(skeleton, img_original, img_ID)         # vykreslí nejpravděpodobnejší přímku (řez)
         # plot_histogram(list_dist)                                     # vykresleni histogramu vzdalenosti
         # figure_polyline_from_point(img_original, sorted_list)         # vykresli linu ze serazenich bodu podle x
 
@@ -233,7 +259,21 @@ def find_incisions(file_path: str, SAVE: bool, PRINT: bool):
     return 'correct'
 
 
-def run_find_incisions(file_path: str, save_fig: bool, verbose: bool):
+def run_find_incisions(file_path: str, save_fig: bool, verbose: bool) -> list[list]:
+    """
+    Metoda spustí hledáni aproximace řezu (jizvy) 1 nebo 2 přímkami (1line, 2line).
+        - pokud nenajde dostatečný počet bodu na aproximaci -> hledání opakuje 'MAX_I' krát vždy s jinými poč. pod.
+
+    PARAMETRY:
+    -----------------------
+        VSTUPY:
+            :param file_path:   cesta k souboru
+            :param save_fig:    ukldani obrazku do slozky 'figure' (True/False)
+            :param verbose:     podrobny (verbose) rezim s vizualizaci (True/False)
+        VYSTUP:
+             :return:   nalezena aproximace rezu (jizvy) 1 nebo 2 přímkami v podobě reprezentace poč. a konc. bodů
+    """
+
     global RESULT  # globalni promenna, vrati vysledek
     MAX_I = 5      # maximalni počet opakovani hledani jizvy (vždy jiny poc. podminky)
     i = 0          # pocet aktualnich pokusu
