@@ -1,17 +1,14 @@
-from typing import Tuple
+# Coding: utf-8
 
 import matplotlib.pyplot as plt
 import skimage
 from skimage import measure
-from skimage.transform import (hough_line, hough_line_peaks,
-                               probabilistic_hough_line)
+from skimage.transform import (hough_line, hough_line_peaks)
 import numpy as np
 from scipy.stats import linregress
 
-from utils import extract_blob_area
 
-
-def figure_result(img_gray, binary_image, skeleton, img_original, lines,ID):
+def figure_result(img_gray, binary_image, skeleton, img_original, lines, ID) -> None:
     """ Vykresí 3 obrázky v 1 figure:
             1. obrázek v šedi
             2. obrázek po prahování
@@ -61,6 +58,7 @@ def figure_polyline(img_original, lines: list, axes=None, figure=True):
 
 
 def plot_lines(lines: list, axes=None) -> None:
+    """ Vykreslí čáry z bodu [((x0,y0) (x1,y1)), ...]"""
     for line in lines:
         p0, p1 = line
         if axes:
@@ -69,8 +67,7 @@ def plot_lines(lines: list, axes=None) -> None:
             plt.plot((p0[0], p1[0]), (p0[1], p1[1]), '-r')
 
 
-
-def figure_polyline_from_point(img_original, lines: list):
+def figure_polyline_from_point(img_original, lines: list) -> None:
     """ Vykresí originální obrázek s polylinama ze serazenych bodu podle x osy do 1 figure.
 
      Parameters:
@@ -94,7 +91,8 @@ def figure_polyline_from_point(img_original, lines: list):
     # plt.show()
 
 
-def figure_skeleton_contours(skeleton, img_original):
+def figure_skeleton_contours(skeleton, img_original) -> None:
+    """ Vykreslí kontury skeletonizace. """
     # Find the contours from the skeleton
     contours = measure.find_contours(skeleton, level=0.5)
 
@@ -105,7 +103,8 @@ def figure_skeleton_contours(skeleton, img_original):
     # plt.show()
 
 
-def figure_one_hough_line(skeleton, img_original, img_ID):
+def figure_one_hough_line(skeleton, img_original, img_ID) -> None:
+    """ Vykreslí aproximaci nejlepší přímky z obrázku(= skeleton) pomocí Hough tranform. """
     h, theta, d = hough_line(skeleton)
 
     plt.figure(figsize=(15, 15))
@@ -141,14 +140,15 @@ def figure_one_hough_line(skeleton, img_original, img_ID):
     plt.show()
 
 
-def dist_point_from_line(x: float, y: float, slope, intercept):
+def dist_point_from_line(x: float, y: float, slope, intercept) -> float:
+    """ Vrací vzdálenost bodu od přímky. """
     distance = np.abs(slope * x - y + intercept) / np.sqrt(slope**2 + 1)
     return distance
 
 
-def get_list_dist(x: list, y: list):
-    slope, intercept, r_value, p_value, std_err = linregress(x, y)
-    # print(f'std error: {std_err}')
+def get_list_dist(x: list, y: list) -> list:
+    """ Vrátí seznam vzdálenosti bodu [x,y] od přímky. """
+    slope, intercept, r_value, p_value, std_err = linregress(x, y)   # aproximace bodu primkou
     list_dist = list()
     for i in range(len(x)):
         dist_i = dist_point_from_line(x[i], y[i], slope, intercept)
@@ -156,7 +156,7 @@ def get_list_dist(x: list, y: list):
     return list_dist
 
 
-def remove_distant_points(x, y, list_dist):
+def remove_distant_points(x: list, y: list, list_dist: list) -> (list, list):
     """ Odstrani automaticky přiliš vzdálené body od přímky podle 'thresholdu'. """
     # hranični body pro treshold : THRESHOLD_MIN >= threshold >= THRESHOLD_MAX (TODO: udelat poměrově k vel. obrazku?)
     THRESHOLD_MIN = 5
@@ -170,8 +170,8 @@ def remove_distant_points(x, y, list_dist):
     idx = max(idx, 0)                                # pokud idx zaporný -> nulty index
     idx = min(idx, len(indices)-1)
     threshold = bin_edges[indices[0][idx]]           # thhreshold pro odstraneni bodu
-    threshold = min(np.float32(THRESHOLD_MAX), threshold)      # TODO: zmenit, ted nesmi byt vzdalenjesi > 20
-    threshold = max(np.float32(THRESHOLD_MIN), threshold)      # TODO: zmenit, ted nesmi byt vzdalenjesi < 5
+    threshold = min(np.float32(THRESHOLD_MAX), threshold)      # TODO: zmenit?, ted nesmi byt vzdalenjesi > 20
+    threshold = max(np.float32(THRESHOLD_MIN), threshold)      # TODO: zmenit?, ted nesmi byt vzdalenjesi < 5
     indices = np.where(list_dist > threshold)
     print(f'threshold - remove points:\t {threshold:0.2f}')
     # print(indices, idx)
@@ -189,7 +189,7 @@ def remove_distant_points(x, y, list_dist):
 
 
 def get_lines_points(x: list, y: list) -> list[list[list: int, float]]:
-    ''' Vraci listu listu se startovacími/konečnými body liny.'''
+    """ Vraci listu listu se startovacími/konečnými body liny."""
     ROUND_DECIMALS = 2
     incision_polyline = list()
     for i in range(len(x)):
@@ -213,12 +213,14 @@ def get_lines_points(x: list, y: list) -> list[list[list: int, float]]:
     return incision_polyline
 
 
-def plot_regress_line(incision_polyline):
+def plot_regress_line(incision_polyline: list) -> None:
+    """ Vykresli primku z bodu. """
     line_array = np.array(incision_polyline)
     plt.plot(line_array[:, 1], line_array[:, 0], color='red', label='Regression Line')
 
 
 def plot_img_with_regress_line(incision_polyline, img_original, img_ID: int) -> None:
+    """ Vykreselí obrázek a proloží jizvu přímkou/přímkami. """
     # Vykreslení originalniho obrazku
     plt.imshow(img_original, cmap='gray')
 
@@ -229,6 +231,7 @@ def plot_img_with_regress_line(incision_polyline, img_original, img_ID: int) -> 
 
 
 def plot_histogram(distance: list) -> None:
+    """ Vykreslení histogram vzdáleností bodů od přímky. """
     # # Vykreslení histogramu a lokálních minim
     plt.hist(distance, bins='auto', edgecolor='black')
     # plt.plot(histogram, color='b')
@@ -239,24 +242,8 @@ def plot_histogram(distance: list) -> None:
     plt.show()
 
 
-def get_control_points(
-        img: np.ndarray, blur_intensity: float, point_min_distance: float
-) -> Tuple[np.ndarray, np.ndarray]:
-    hue = skimage.color.rgb2hsv(img)[:, :, 0]   # the bloby one
-    sat = skimage.color.rgb2hsv(img)[:, :, 1]   # the sharp one
-    blob = extract_blob_area(hue)
-    masked = sat * blob
-    blurred = skimage.filters.gaussian(masked, sigma=blur_intensity)
-    return (
-        skimage.feature.peak_local_max(
-            blurred, min_distance=point_min_distance, exclude_border=2
-        ),
-        blurred,
-    )
-
-
 def get_best_2_lines_with_crit_J(x: list, y: list) -> float:
-    ''' Vypocte nejlepsi rozdeleni z 1 liny na 2 liny.'''
+    """ Vypocte nejlepsi rozdeleni z 1 liny na 2 liny."""
     crit_J = list()
     for i in range(2, len(x)-1):
         x1 = x[:i]
@@ -272,14 +259,15 @@ def get_best_2_lines_with_crit_J(x: list, y: list) -> float:
 
 
 def save_figure(file_name: str) -> None:
-    '''Uloží figure'''
+    """Uloží figure (pouze obsah - bez os, ramečku, legendy)"""
     plt.axis('off')                         # vypne osy
     if plt.gca().get_legend() is not None:  # odstrani legendu pokud existuje
         plt.gca().get_legend().remove()
     plt.savefig(file_name, format="pdf", bbox_inches="tight", pad_inches=0)
 
 
-def init_data():
+def init_data() -> dict:
+    """ Inicializuje data pro output JSON. """
     data = dict()
     data['filename'] = ''
     data['incision_polyline'] = list(list())
