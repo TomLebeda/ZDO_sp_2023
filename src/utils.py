@@ -324,6 +324,22 @@ def extract_blob_area(img: np.ndarray) -> np.ndarray:
     kernel_size = int(min(l3.shape) / 20)
     kernel = skimage.morphology.disk(kernel_size)
     mask = skimage.morphology.binary_closing(l3, kernel)
+
+    mask_size = np.count_nonzero(mask)
+    img_size = mask.size
+
+    if mask_size / img_size < 0.1:
+        print('Warning: Mask detection failed (ratio too small), proceeding without a mask.')
+        # blur = skimage.filters.gaussian(sat_channel, 5)
+        # plt.subplot(3, 1, 1)
+        # plt.imshow(img)
+        # plt.subplot(3, 1, 2)
+        # plt.imshow(blur)
+        # plt.subplot(3, 1, 3)
+        # plt.imshow(blur)
+        # plt.show()
+        mask = np.ones(mask.shape)
+
     return mask
 
 

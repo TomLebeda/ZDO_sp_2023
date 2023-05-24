@@ -1,4 +1,5 @@
-./data
-./.vimproject
-./src/__pycache__
+data
+.vimproject
 src/__pycache__
+ZDO_referat
+out

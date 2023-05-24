@@ -1,7 +1,7 @@
 [
     {
         "filename": "./data/images/default/SA_20211012-191450_incision_crop_0.jpg",
-        "incision_polyline": [],
+        "incision_polyline": null,
         "crossing_positions": [],
         "crossing_angles": []
     }
