@@ -1,4 +1,4 @@
-# import xmltodict
+import xmltodict
 from matplotlib import pyplot as plt
 from utils import *
 import time
@@ -25,10 +25,10 @@ STITCH_ANGLE_COUNT = (
     20  # how many angles to try when detecting stitch-line angles
 )
 
-# with open(ANNOTATION_PATH) as f:
-#     doc = xmltodict.parse(f.read())
-#
-# imgs_annotated = doc['annotations']['image']
+with open(ANNOTATION_PATH) as f:
+    doc = xmltodict.parse(f.read())
+
+imgs_annotated = doc['annotations']['image']
 
 # explore_rgb_channels(list(range(50)), imgs_annotated, IMAGES_PATH)
 # explore_blobs(list(range(50)), imgs_annotated, IMAGES_PATH)
