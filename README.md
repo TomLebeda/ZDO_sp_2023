@@ -1,6 +1,3 @@
-# ZDO_sp_2023
-ZDO_sp_2023
-
 Authors: 
   - Tomáš Lebeda
   - Jan Tupý
