@@ -1,6 +1,6 @@
 # Coding: utf-8
 
-from utils_Tupy import *
+from utils_only_incision import *
 import skimage.io
 from skimage.transform import probabilistic_hough_line
 from skimage import filters
