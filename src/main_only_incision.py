@@ -23,7 +23,7 @@ with open(ANNOTATION_PATH) as f:
 
 imgs_annotated = doc['annotations']['image']
 
-#
+
 for img_ID in range(100):
     # img_ID = 70
     print('\n\n', '*'*15, f'img_ID: {img_ID}', '*'*15)

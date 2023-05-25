@@ -152,7 +152,7 @@ def find_incisions(file_path: str, SAVE: bool, PRINT: bool) -> str:
 
     if PRINT:
         # figure_polyline(img_original, lines) # good for 14 (20,10,2)
-        figure_result(img_hsv,binary_image, skeleton, img_original, lines, img_ID)
+        figure_result(img_hsv, binary_image, skeleton, img_original, lines, img_ID)
         # figure_skeleton_contours(skeleton, img_original)
         # figure_one_hough_line(skeleton, img_original, img_ID)         # vykreslí nejpravděpodobnejší přímku (řez)
         # plot_histogram(list_dist)                                     # vykresleni histogramu vzdalenosti
