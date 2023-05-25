@@ -304,6 +304,6 @@ def run_find_incisions(file_path: str, save_fig: bool, verbose: bool) -> list[li
             exit(1)
 
         except Exception as e:
-            print(f'Exceprtion: {e}')
-            print('\t---> try find again! k')
+            print(f'Exception: {e}')
+            print('\t---> try find again!')
             i += 1
