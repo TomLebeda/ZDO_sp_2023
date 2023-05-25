@@ -44,7 +44,7 @@ def find_incisions(file_path: str, SAVE: bool, PRINT: bool) -> str:
     # Nacteni obrazku
     try:
         img_original = skimage.io.imread(file_path)
-        img_ID = file_path.split('/')[-1]
+        img_ID = file_path.split('/')[-1].split('.')[0]
         print('\n\n', '*'*15, f'img_ID: {img_ID}', '*'*15)
     except:
         print(f'ERROR: input dont exist:\t{file_path}')
@@ -164,13 +164,13 @@ def find_incisions(file_path: str, SAVE: bool, PRINT: bool) -> str:
         # ----- Vykresleni 2 line -----
         plt.subplot(211)
         plt.scatter(x, y, color='blue', label='Data')  # Vykreslení bodů
-        plot_img_with_regress_line(incision_polyline2, img_original, img_ID)
+        plot_img_with_regress_line(incision_polyline2, img_original)
         plt.title(f'line: 2, J_crit = {min_J_2line:.2f}')
 
         # ----- Vykresleni 1 line -----
         plt.subplot(212)
         plt.scatter(x, y, color='blue', label='Data')  # Vykreslení bodů
-        plot_img_with_regress_line(incision_polyline1, img_original, img_ID)
+        plot_img_with_regress_line(incision_polyline1, img_original)
         plt.title(f'line: 1, J_crit = {min_J_1line:.2f}')
 
         # Zobrazení grafu
@@ -182,13 +182,13 @@ def find_incisions(file_path: str, SAVE: bool, PRINT: bool) -> str:
         # ----- Vykresleni vysledku s scatter -----
         plt.subplot(211)
         plt.scatter(x, y, color='blue', label='Data')  # Vykreslení bodů
-        plot_img_with_regress_line(result_incision_polyline, img_original, img_ID)
+        plot_img_with_regress_line(result_incision_polyline, img_original)
         plt.legend().set_visible(False)
         plt.title(f'Result: incision polyline with points')
 
         # ----- Vykresleni vysledku bez scatter -----
         plt.subplot(212)
-        plot_img_with_regress_line(result_incision_polyline, img_original, img_ID)
+        plot_img_with_regress_line(result_incision_polyline, img_original)
         plt.legend().set_visible(False)
         plt.title(f'Result: incision polyline')
 
@@ -210,50 +210,50 @@ def find_incisions(file_path: str, SAVE: bool, PRINT: bool) -> str:
         # ----- Ulozeni 2 line -----
         plt.figure(frameon=False)
         plt.scatter(x, y, color='blue', s=MARKER_SIZE, linewidths=LINE_WIDTH, edgecolor="black")  # Vykreslení bodů
-        plot_img_with_regress_line(incision_polyline2, img_original, img_ID)
-        save_figure(f"figure/{img_ID:03d}_2line.pdf")
+        plot_img_with_regress_line(incision_polyline2, img_original)
+        save_figure(f"figure/{img_ID}_2line.pdf")
 
         # ----- Ulozeni 1 line -----
         plt.clf()
         plt.scatter(x, y, color='blue', s=MARKER_SIZE, linewidths=LINE_WIDTH, edgecolor="black")  # Vykreslení bodů
-        plot_img_with_regress_line(incision_polyline1, img_original, img_ID)
-        save_figure(f"figure/{img_ID:03d}_1line.pdf")
+        plot_img_with_regress_line(incision_polyline1, img_original)
+        save_figure(f"figure/{img_ID}_1line.pdf")
 
         # ----- Ulozeni vysledku -----
         plt.clf()
-        plot_img_with_regress_line(result_incision_polyline, img_original, img_ID)
-        save_figure(f"figure/{img_ID:03d}_result.pdf")
+        plot_img_with_regress_line(result_incision_polyline, img_original)
+        save_figure(f"figure/{img_ID}_result.pdf")
 
         # ----- ulozeni vstupniho obrazku -----
         plt.clf()
         plt.imshow(img_original, cmap='gray')
-        save_figure(f"figure/{img_ID:03d}_original_image.pdf")
+        save_figure(f"figure/{img_ID}_original_image.pdf")
 
         # ----- ulozeni obrazku v RGB2HSV -----
         plt.clf()
         plt.imshow(img_hsv)
-        save_figure(f"figure/{img_ID:03d}_hsv_image.pdf")
+        save_figure(f"figure/{img_ID}_hsv_image.pdf")
 
         # ----- ulozeni skeletonu -----
         plt.clf()
         plt.imshow(skeleton, cmap='gray')
-        save_figure(f"figure/{img_ID:03d}_skeleton.pdf")
+        save_figure(f"figure/{img_ID}_skeleton.pdf")
 
         # ----- ulozeni binarniho obrazku -----
         plt.clf()
         plt.imshow(binary_image, cmap='gray')
-        save_figure(f"figure/{img_ID:03d}_binary_image.pdf")
+        save_figure(f"figure/{img_ID}_binary_image.pdf")
 
         # ----- ulozeni binarniho obrazku -----
         plt.clf()
         figure_skeleton_contours(skeleton, img_original)
-        save_figure(f"figure/{img_ID:03d}_skeleton_contours.pdf")
+        save_figure(f"figure/{img_ID}_skeleton_contours.pdf")
 
         # ----- ulozeni Hough lines -----
         plt.clf()
         plt.imshow(img_original, cmap='gray')
         plot_lines(lines)
-        save_figure(f"figure/{img_ID:03d}_hough_lines.pdf")
+        save_figure(f"figure/{img_ID}_hough_lines.pdf")
         plt.close('all')
 
     return 'correct'
@@ -303,6 +303,7 @@ def run_find_incisions(file_path: str, save_fig: bool, verbose: bool) -> list[li
             print('Manually kill.')
             exit(1)
 
-        except:
+        except Exception as e:
+            print(f'Exceprtion: {e}')
             print('\t---> try find again! k')
             i += 1

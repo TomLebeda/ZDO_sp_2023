@@ -219,7 +219,7 @@ def plot_regress_line(incision_polyline: list) -> None:
     plt.plot(line_array[:, 1], line_array[:, 0], color='red', label='Regression Line')
 
 
-def plot_img_with_regress_line(incision_polyline, img_original, img_ID: int) -> None:
+def plot_img_with_regress_line(incision_polyline, img_original) -> None:
     """ Vykreselí obrázek a proloží jizvu přímkou/přímkami. """
     # Vykreslení originalniho obrazku
     plt.imshow(img_original, cmap='gray')
