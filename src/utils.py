@@ -365,7 +365,6 @@ def get_control_points(
 def compute_score(
     img: np.ndarray, kernel: np.ndarray, x: int, y: int
 ) -> float:
-    # TODO: check if the coordinates are too close to border and the kernel would oferflow
     k = kernel.shape[0]
     xmin = x - (k // 2)
     xmax = x + (k // 2)
