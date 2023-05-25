@@ -43,7 +43,8 @@ print('-' * CHAR_LEN)
 # ****                                 A L G O R I T M H                              ****
 # ****************************************************************************************
 
-FOLDER = './input_images/'   # folder for input images in args
+#FOLDER = './input_images/'   # folder for input images in args
+FOLDER = ''
 
 output_data = list()         # init final output data for all image in args
 
@@ -60,7 +61,6 @@ for file_name in input_files:
         print('Manually kill.')
     except Exception as e:
         print(f'END: {e}')
-        exit(1)
 
     output_data.append(data)
 
