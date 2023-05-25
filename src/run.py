@@ -46,7 +46,10 @@ for file_name in input_files:
     data = init_data()
     data['filename'] = file_name
     try:
-        data['incision_polyline'] = run_find_incisions(FOLDER + file_name, save_fig, verbose)
+        incision_polyline, crossing_positions, crossing_angles = run_find_incisions(FOLDER + file_name, save_fig, verbose)
+        data['incision_polyline'] = incision_polyline
+        data['crossing_positions'] = crossing_positions
+        data['crossing_angles'] = crossing_angles
     except KeyboardInterrupt:
         print('Manually kill.')
     except Exception as e:
@@ -55,7 +58,7 @@ for file_name in input_files:
 
     output_data.append(data)
 
-
+print(output_data)
 with open(output_file, 'w', encoding='utf-8') as f:
     json.dump(output_data, f, ensure_ascii=False, indent=4)
     print(f'\nOutput data successfully saved: \t{output_file}\n')

@@ -6,6 +6,9 @@ import time
 ANNOTATION_PATH = '/home/tom/School/FAV/8_semestr/ZDO/ZDO_sp_2023/data/annotations.xml'
 IMAGES_PATH = '/home/tom/School/FAV/8_semestr/ZDO/ZDO_sp_2023/data/images/default/'
 
+ANNOTATION_PATH = 'data/annotations.xml'
+IMAGES_PATH = 'data/images/default/'
+
 BLUR_INTENSITY = 2   # blur intensity for control point searching
 CONTROL_POINT_MIN_DIST = 1   # minimal distance for control points
 POINT_SCORE_KERNEL_SIZE = (
@@ -48,7 +51,7 @@ def init_data():
 def run_find_incisions(path: str, save_fig: bool, verbose: bool):
     # load the image
     # for img_ID in [1, 11, 37, 3, 41, 8]:
-    for img_ID in range(100):
+    for img_ID in range(1):
         # img_ID = 1
         img_fname = imgs_annotated[img_ID]['@name']
         img = skimage.io.imread(IMAGES_PATH + img_fname)
@@ -679,3 +682,13 @@ def run_find_incisions(path: str, save_fig: bool, verbose: bool):
             plt.suptitle(f'Img : {path}')
 
             plt.show()
+
+
+    #----------------------------------------------------------------------------
+    incision_polyline = list()
+    for c in best_main_line_points:
+        incision_polyline.append([int(control_points[c].x), int(control_points[c].y)])
+
+    crossing_angles, crossing_positions = find_angles(best_main_line_points, control_points, intersections_tuples)
+    # ----------------------------------------------------------------------------
+    return incision_polyline, crossing_positions, crossing_angles

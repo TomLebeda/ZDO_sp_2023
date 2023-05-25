@@ -382,3 +382,220 @@ def get_gauss_kernel(radius: int) -> np.ndarray:
     scipy.ndimage.gaussian_filter(kernel, radius / 4, output=kernel)
     kernel /= kernel[radius // 2, radius // 2]
     return kernel
+
+
+# NEW METHOD --------------------
+
+# metoda notebooku -> od ucitele
+def intersectLines( pt1, pt2, ptA, ptB ):
+    """ this returns the intersection of Line(pt1,pt2) and Line(ptA,ptB)
+
+        returns a tuple: (xi, yi, valid, r, s), where
+        (xi, yi) is the intersection
+        r is the scalar multiple such that (xi,yi) = pt1 + r*(pt2-pt1)
+        s is the scalar multiple such that (xi,yi) = pt1 + s*(ptB-ptA)
+            valid == 0 if there are 0 or inf. intersections (invalid)
+            valid == 1 if it has a unique intersection ON the segment    """
+
+    DET_TOLERANCE = 0.00000001
+
+    # the first line is pt1 + r*(pt2-pt1)
+    # in component form:
+    x1, y1 = pt1;   x2, y2 = pt2
+    dx1 = x2 - x1;  dy1 = y2 - y1
+
+    # the second line is ptA + s*(ptB-ptA)
+    x, y = ptA;   xB, yB = ptB;
+    dx = xB - x;  dy = yB - y;
+
+    # we need to find the (typically unique) values of r and s
+    # that will satisfy
+    #
+    # (x1, y1) + r(dx1, dy1) = (x, y) + s(dx, dy)
+    #
+    # which is the same as
+    #
+    #    [ dx1  -dx ][ r ] = [ x-x1 ]
+    #    [ dy1  -dy ][ s ] = [ y-y1 ]
+    #
+    # whose solution is
+    #
+    #    [ r ] = _1_  [  -dy   dx ] [ x-x1 ]
+    #    [ s ] = DET  [ -dy1  dx1 ] [ y-y1 ]
+    #
+    # where DET = (-dx1 * dy + dy1 * dx)
+    #
+    # if DET is too small, they're parallel
+    #
+    DET = (-dx1 * dy + dy1 * dx)
+
+    if math.fabs(DET) < DET_TOLERANCE: return (0,0,0,0,0)
+
+    # now, the determinant should be OK
+    DETinv = 1.0/DET
+
+    # find the scalar amount along the "self" segment
+    r = DETinv * (-dy  * (x-x1) +  dx * (y-y1))
+
+    # find the scalar amount along the input line
+    s = DETinv * (-dy1 * (x-x1) + dx1 * (y-y1))
+
+    # return the average of the two descriptions
+    xi = (x1 + r*dx1 + x + s*dx)/2.0
+    yi = (y1 + r*dy1 + y + s*dy)/2.0
+
+    ##############
+    #found is intersection (xi,yi) in inner segment
+    valid = 0
+    if x1 != x2:
+        if x1 < x2:
+            a = x1
+            b = x2
+        else:
+            a = x2
+            b = x1
+        c = xi
+    else:
+        #predpoklad, ze pak y jsou ruzne
+        if y1 < y2:
+            a = y1
+            b = y2
+        else:
+            a = y2
+            b = y1
+        c = yi
+    if (c > a) and (c < b):
+        #now second segment
+        if x != xB:
+            if x < xB:
+                a = x
+                b = xB
+            else:
+                a = xB
+                b = x
+            c = xi
+        else:
+            #predpoklad, ze pak y jsou ruzne
+            if y < yB:
+                a = y
+                b = yB
+            else:
+                a = yB
+                b = y
+            c = yi
+        if (c > a) and (c < b):
+            valid = 1
+
+    return ( xi, yi, valid, r, s )
+
+
+def calculate_angle(pt1, pt2, ptA, ptB) -> float:
+    """ Vypocita odchylku dvou primek. """
+    # the first line
+    x1, y1 = pt1
+    x2, y2 = pt2
+
+    # the second line
+    x3, y3 = ptA
+    x4, y4 = ptB
+
+    # Výpočet úhlu mezi dvěma usečkami
+    dx1 = x2 - x1
+    dy1 = y2 - y1
+    dx2 = x4 - x3
+    dy2 = y4 - y3
+
+    angle_rad = math.atan2(dy2, dx2) - math.atan2(dy1, dx1)
+
+    # Převedení úhlu na stupně
+    angle_degrees = math.degrees(angle_rad)
+
+    # Úhel mezi 0 a 180 stupni
+    if angle_degrees < 0:
+        angle_degrees += 180
+
+    # Úhel mezi 0 a 90 stupni
+    if angle_degrees > 90:
+        angle_degrees = 180 - angle_degrees
+
+    return angle_degrees
+
+
+def get_index_sorted(y: list) -> list:
+    """ Vrati indexy puvodniho listu tak, aby byl serazeny vzestupne."""
+    y_sorted = sorted(y)
+    y_index = list()
+    for yi in y_sorted:
+        idx = y.index(yi)
+        y_index.append(idx)
+    return y_index
+
+
+def sorted_by_index_list(data: list, index: list) -> list:
+    """ Seradi vstupni 'data' podle listu 'index'. """
+    data_sorted = list()
+    for i in index:
+        data_sorted.append(data[i])
+    return data_sorted
+
+
+def find_angles(best_main_line_points: list, control_points, intersections_tuples: list) -> (list, list):
+    """
+    Nalezne pruseciky, uhly stehu a rezu vcetne vzdalenosti stehu od levehe pocatku jizvy.
+
+    PARAMTRY:
+    ------------------------
+    :param best_main_line_points:  list indexu, pro nejepsi caru rezu -> control_points
+    :param control_points:         kontrolni nalezene body
+    :param intersections_tuples:   pocatecni a konecne body stehu
+    :return: (list, list)
+        - angles_sorted:           list uhlu serezenych zleva od rezu
+        - crossing_positions:      list euklidovskych vzdalenosti zlevo od rezu
+    """
+    y_list = list()
+    x_list = list()
+    angles = list()
+
+    # Prochazi jendotlive stehy
+    for c in intersections_tuples:
+        # point lines
+        pA = [c[1][0], c[1][1]]
+        pB = [c[2][0], c[2][1]]
+
+        # Prochazi jednotlivo polyliny rezu (jizvy)
+        for i in range(len(best_main_line_points)-1):
+            # point scar
+            idx_start = best_main_line_points[i]
+            idx_end = best_main_line_points[i+1]
+            p0 = [control_points[idx_start].x, control_points[idx_start].y]
+            p1 = [control_points[idx_end].x, control_points[idx_end].y]
+
+            (xi, yi, valid, r, s) = intersectLines(p0, p1, pA, pB)
+            if valid == 1:    # pokud steh a polyline se protínaji -> prusecik
+                y_list.append(yi)
+                x_list.append(xi)
+                angle = calculate_angle(p0, p1, pA, pB)
+                angles.append(round(angle, 1))
+                break
+
+    # razeni dat podle vodorovne osy
+    index_sorted = get_index_sorted(y_list)
+    x_sorted = sorted_by_index_list(x_list, index_sorted)
+    y_sorted = sorted_by_index_list(y_list, index_sorted)
+    angles_sorted = sorted_by_index_list(angles, index_sorted)
+
+    # prvni bod rezu (jizvy) zleva
+    idx_scar_start = best_main_line_points[0]
+    scar_start_point = [control_points[idx_scar_start].x, control_points[idx_scar_start].y]
+
+    # Vypocet vzdalenosti pruseciku stehu z rezem do leveho okraje rezu (Euklidovska vzdalenost)
+    crossing_positions = list()
+    for (xi, yi) in zip(x_sorted, y_sorted):
+        euclidean_dist = math.dist(scar_start_point, [xi, yi])
+        crossing_positions.append(round(euclidean_dist,1))
+
+    # Výpis do konzole
+    for (angles, xi, yi, cross) in zip(angles_sorted, x_sorted, y_sorted, crossing_positions):
+        print(f'Angle: {angles:6.2f},\t Intersection: [{xi:6.2f}, {yi:6.2f}],\t Crossing position: {cross:6.2f}')
+
+    return angles_sorted, crossing_positions
