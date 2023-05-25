@@ -3,8 +3,8 @@ from matplotlib import pyplot as plt
 from utils import *
 import time
 
-ANNOTATION_PATH = './data/annotations.xml'
-IMAGES_PATH = './data/images/default/'
+ANNOTATION_PATH = '/home/tom/School/FAV/8_semestr/ZDO/ZDO_sp_2023/data/annotations.xml'
+IMAGES_PATH = '/home/tom/School/FAV/8_semestr/ZDO/ZDO_sp_2023/data/images/default/'
 
 BLUR_INTENSITY = 2   # blur intensity for control point searching
 CONTROL_POINT_MIN_DIST = 1   # minimal distance for control points
@@ -46,15 +46,20 @@ def init_data():
 
 
 def run_find_incisions(path: str, save_fig: bool, verbose: bool):
-        # load the image
-        # img_fname = imgs_annotated[img_ID]['@name']
-        # img = skimage.io.imread(IMAGES_PATH + img_fname)
+    # load the image
+    # for img_ID in [1, 11, 37, 3, 41, 8]:
+    for img_ID in range(100):
+        # img_ID = 1
+        img_fname = imgs_annotated[img_ID]['@name']
+        img = skimage.io.imread(IMAGES_PATH + img_fname)
         t0 = time.time()
         if verbose:
             print(f'Loading image {path}... ')
-        img = skimage.io.imread(path)
-        if img.shape[0] > img.shape[1]: 
-            print("Warning: Vertical image detected, will rotate by 90 degrees.")
+        # img = skimage.io.imread(path)
+        if img.shape[0] > img.shape[1]:
+            print(
+                'Warning: Vertical image detected, will rotate by 90 degrees.'
+            )
             img = skimage.transform.rotate(img, 90.0, resize=True)
         if verbose:
             print(f'Done ({(time.time() - t0):.4f} s)')
@@ -86,7 +91,9 @@ def run_find_incisions(path: str, save_fig: bool, verbose: bool):
             print(f'\nProcessing control points... ')
         control_point_scores = np.zeros(len(xy))
         for i, c in enumerate(xy):
-            score = compute_score(masked, control_points_score_kernel, c[0], c[1])
+            score = compute_score(
+                masked, control_points_score_kernel, c[0], c[1]
+            )
             control_point_scores[i] = score
             control_points.append(ControlPoint(c[0], c[1], score))
         control_points.sort(key=lambda c: c.score, reverse=True)
@@ -176,7 +183,9 @@ def run_find_incisions(path: str, save_fig: bool, verbose: bool):
         # combine the brightness and angle scores into a final scalar
         if verbose:
             t0 = time.time()
-            print(f'\nCombining brightness and angle costs into final score...')
+            print(
+                f'\nCombining brightness and angle costs into final score...'
+            )
         line_final_score_matrix = np.zeros((cp_count, cp_count))
         for i in range(len(control_points)):
             for j in range(i, len(control_points)):
@@ -215,7 +224,7 @@ def run_find_incisions(path: str, save_fig: bool, verbose: bool):
         if verbose:
             print(f'Done ({(time.time() - t0):.4f} s)')
 
-        # construct the line-net with values based on brightness
+        # construct the line-net with values based on angles
         if verbose:
             t0 = time.time()
             print(f'\nConstructing brightness line-map...')
@@ -233,7 +242,7 @@ def run_find_incisions(path: str, save_fig: bool, verbose: bool):
         if verbose:
             print(f'Done ({(time.time() - t0):.4f} s)')
 
-        # construct the line-net with values based on brightness
+        # construct the line-net with values based on final score
         if verbose:
             t0 = time.time()
             print(f'\nConstructing final-score line-map...')
@@ -295,8 +304,12 @@ def run_find_incisions(path: str, save_fig: bool, verbose: bool):
                 p2 = control_points[max_idx]
                 main_line_points.append(max_idx)
                 rr, cc = skimage.draw.line(p1.x, p1.y, p2.x, p2.y)
-                connect_lmap[rr, cc] = np.maximum(linemap_angles[rr, cc], max_val)
-                main_line_total_cost += line_brightness_cost_matrix[lb, max_idx]
+                connect_lmap[rr, cc] = np.maximum(
+                    linemap_angles[rr, cc], max_val
+                )
+                main_line_total_cost += line_brightness_cost_matrix[
+                    lb, max_idx
+                ]
                 lb = max_idx
             while True:
                 candidates = np.copy(line_final_score_matrix[rb, :])
@@ -316,8 +329,12 @@ def run_find_incisions(path: str, save_fig: bool, verbose: bool):
                 p2 = control_points[max_idx]
                 main_line_points.insert(0, max_idx)
                 rr, cc = skimage.draw.line(p1.x, p1.y, p2.x, p2.y)
-                connect_lmap[rr, cc] = np.maximum(linemap_angles[rr, cc], max_val)
-                main_line_total_cost += line_brightness_cost_matrix[lb, max_idx]
+                connect_lmap[rr, cc] = np.maximum(
+                    linemap_angles[rr, cc], max_val
+                )
+                main_line_total_cost += line_brightness_cost_matrix[
+                    lb, max_idx
+                ]
                 rb = max_idx
             if main_line_total_cost > best_main_line_score:
                 best_main_line_score = main_line_total_cost
@@ -410,21 +427,78 @@ def run_find_incisions(path: str, save_fig: bool, verbose: bool):
             plt.axis('off')
             if plt.gca().get_legend() is not None:
                 plt.gca().get_legend().remove()
-            plt.savefig(f"out/{img_ID}_original", format='pdf', bbox_inches='tight', pad_inches=0, dpi=300)
+            plt.savefig(
+                f'{img_ID}_original.pdf',
+                format='pdf',
+                bbox_inches='tight',
+                pad_inches=0,
+                dpi=300,
+            )
             plt.clf()
 
             plt.imshow(skimage.color.rgb2hsv(img)[:, :, 0], cmap='inferno')
             plt.axis('off')
             if plt.gca().get_legend() is not None:
                 plt.gca().get_legend().remove()
-            plt.savefig(f"out/{img_ID}_hue", format='pdf', bbox_inches='tight', pad_inches=0, dpi=300)
+            plt.savefig(
+                f'{img_ID}_hue.pdf',
+                format='pdf',
+                bbox_inches='tight',
+                pad_inches=0,
+                dpi=300,
+            )
+            plt.clf()
+
+            plt.imshow(skimage.color.rgb2hsv(img)[:, :, 0], cmap='hsv')
+            plt.axis('off')
+            if plt.gca().get_legend() is not None:
+                plt.gca().get_legend().remove()
+            plt.savefig(
+                f'{img_ID}_hue_hsv.pdf',
+                format='pdf',
+                bbox_inches='tight',
+                pad_inches=0,
+                dpi=300,
+            )
+            plt.clf()
+
+            plt.imshow(skimage.color.rgb2hsv(img)[:, :, 1])
+            plt.axis('off')
+            if plt.gca().get_legend() is not None:
+                plt.gca().get_legend().remove()
+            plt.savefig(
+                f'{img_ID}_sat.pdf',
+                format='pdf',
+                bbox_inches='tight',
+                pad_inches=0,
+                dpi=300,
+            )
+            plt.clf()
+
+            plt.imshow(skimage.color.rgb2hsv(img)[:, :, 2])
+            plt.axis('off')
+            if plt.gca().get_legend() is not None:
+                plt.gca().get_legend().remove()
+            plt.savefig(
+                f'{img_ID}_val.pdf',
+                format='pdf',
+                bbox_inches='tight',
+                pad_inches=0,
+                dpi=300,
+            )
             plt.clf()
 
             plt.imshow(masked, cmap='inferno')
             plt.axis('off')
             if plt.gca().get_legend() is not None:
                 plt.gca().get_legend().remove()
-            plt.savefig(f"out/{img_ID}_masked", format='pdf', bbox_inches='tight', pad_inches=0, dpi=300)
+            plt.savefig(
+                f'{img_ID}_masked.pdf',
+                format='pdf',
+                bbox_inches='tight',
+                pad_inches=0,
+                dpi=300,
+            )
             plt.clf()
 
             plt.imshow(skimage.color.rgb2gray(img), cmap='gray')
@@ -432,19 +506,31 @@ def run_find_incisions(path: str, save_fig: bool, verbose: bool):
             plt.axis('off')
             if plt.gca().get_legend() is not None:
                 plt.gca().get_legend().remove()
-            plt.savefig(f"out/{img_ID}_cp", format='pdf', bbox_inches='tight', pad_inches=0, dpi=300)
+            plt.savefig(
+                f'{img_ID}_cp.pdf',
+                format='pdf',
+                bbox_inches='tight',
+                pad_inches=0,
+                dpi=300,
+            )
             plt.clf()
 
             plt.imshow(skimage.color.rgb2gray(img), cmap='gray')
             lmp_norm = linemap_finals / np.max(linemap_finals)
             nz = np.nonzero(lmp_norm)
             lmp_norm_a = np.copy(lmp_norm)
-            lmp_norm_a[nz] = lmp_norm[nz] * (2/3) + (1/3)
+            lmp_norm_a[nz] = lmp_norm[nz] * (2 / 3) + (1 / 3)
             plt.imshow(lmp_norm, alpha=lmp_norm_a, cmap='jet')
             plt.axis('off')
             if plt.gca().get_legend() is not None:
                 plt.gca().get_legend().remove()
-            plt.savefig(f"out/{img_ID}_lmp", format='pdf', bbox_inches='tight', pad_inches=0, dpi=300)
+            plt.savefig(
+                f'{img_ID}_lmp.pdf',
+                format='pdf',
+                bbox_inches='tight',
+                pad_inches=0,
+                dpi=300,
+            )
             plt.clf()
 
             plt.imshow(skimage.color.rgb2gray(img), cmap='gray')
@@ -456,7 +542,13 @@ def run_find_incisions(path: str, save_fig: bool, verbose: bool):
             plt.axis('off')
             if plt.gca().get_legend() is not None:
                 plt.gca().get_legend().remove()
-            plt.savefig(f"out/{img_ID}_ml", format='pdf', bbox_inches='tight', pad_inches=0, dpi=300)
+            plt.savefig(
+                f'{img_ID}_ml.pdf',
+                format='pdf',
+                bbox_inches='tight',
+                pad_inches=0,
+                dpi=300,
+            )
             plt.clf()
 
             plt.imshow(skimage.color.rgb2gray(img), cmap='gray')
@@ -466,7 +558,13 @@ def run_find_incisions(path: str, save_fig: bool, verbose: bool):
             plt.axis('off')
             if plt.gca().get_legend() is not None:
                 plt.gca().get_legend().remove()
-            plt.savefig(f"out/{img_ID}_cross", format='pdf', bbox_inches='tight', pad_inches=0, dpi=300)
+            plt.savefig(
+                f'{img_ID}_cross.pdf',
+                format='pdf',
+                bbox_inches='tight',
+                pad_inches=0,
+                dpi=300,
+            )
             plt.clf()
 
             plt.imshow(skimage.color.rgb2gray(img), cmap='gray')
@@ -477,16 +575,48 @@ def run_find_incisions(path: str, save_fig: bool, verbose: bool):
             )
             stitch_map = np.zeros(blurred.shape)
             for it in intersections_tuples:
-                rr, cc = skimage.draw.line(it[1][0], it[1][1], it[2][0], it[2][1])
+                rr, cc = skimage.draw.line(
+                    it[1][0], it[1][1], it[2][0], it[2][1]
+                )
                 stitch_map[rr, cc] = np.maximum(stitch_map[rr, cc], it[4])
-            plt.imshow(1.0*(stitch_map>0), alpha=1.0 * (stitch_map > 0), cmap='cool')
+            plt.imshow(
+                1.0 * (stitch_map > 0),
+                alpha=1.0 * (stitch_map > 0),
+                cmap='cool',
+            )
             plt.axis('off')
             if plt.gca().get_legend() is not None:
                 plt.gca().get_legend().remove()
-            plt.savefig(f"out/{img_ID}_final", format='pdf', bbox_inches='tight', pad_inches=0, dpi=300)
+            plt.savefig(
+                f'{img_ID}_final.pdf',
+                format='pdf',
+                bbox_inches='tight',
+                pad_inches=0,
+                dpi=300,
+            )
             plt.clf()
 
         if verbose:
+            print(f"final scar polyline:")
+            for c in best_main_line_points:
+                # c je index do control_points
+                # control_points je list objektů ControlPoint (z utils)
+                print(f"\t[{control_points[c].x}, {control_points[c].y}]")
+            print(f"final intersections:")
+            for c in intersections_tuples:
+                # c je tuple, který obsahuje (v tomhle pořadí):
+                # 0 -> ControlPoint, který je samotný průsečík
+                # 1 -> bod T, který je jedním z okrajových bodů úsečky, která je steh
+                #      většinou je na horním nebo dolním okraji obrázku
+                # 2 -> bod R, který je druhým bodem úsečky stehu (spolu s T tvoří úsečku stehy)
+                # body R a T jsou dvouprvková pole [x y]
+                # 3 -> úhel úsečky, nicméně v ezoterickém formátu, nejsou to ani úhly, ani radiány
+                # 4 -> skóre úsečky, to tě asi tady nebude zajímat
+                print(f"\t[{c[0].x}, {c[0].y}]")
+            print(f"final stitch lines:")
+            for c in intersections_tuples:
+                print(f"\t[{c[1][0]}, {c[1][1]}] -- [{c[2][0]}, {c[2][1]}]")
+
             plt.subplot(4, 2, 1)
             plt.imshow(img)
             plt.title('Original image')
@@ -511,7 +641,7 @@ def run_find_incisions(path: str, save_fig: bool, verbose: bool):
             lmp_norm = linemap_finals / np.max(linemap_finals)
             nz = np.nonzero(lmp_norm)
             lmp_norm_a = np.copy(lmp_norm)
-            lmp_norm_a[nz] = lmp_norm[nz] * (2/3) + (1/3)
+            lmp_norm_a[nz] = lmp_norm[nz] * (2 / 3) + (1 / 3)
             plt.imshow(lmp_norm, alpha=lmp_norm_a, cmap='jet')
             plt.title('Constructed line map')
 
@@ -522,14 +652,14 @@ def run_find_incisions(path: str, save_fig: bool, verbose: bool):
                 alpha=1.0 * (best_main_line_map > 0),
                 cmap='inferno',
             )
-            plt.title("Detected main line")
+            plt.title('Detected main line')
 
             plt.subplot(4, 2, 7)
             plt.imshow(skimage.color.rgb2gray(img), cmap='gray')
             plt.imshow(blurmap, alpha=blurmap / np.max(blurmap), cmap='winter')
             for c in intersections:
                 plt.plot(c.y, c.x, 'r*')
-            plt.title("Detected crossections")
+            plt.title('Detected crossections')
 
             plt.subplot(4, 2, 8)
             plt.imshow(skimage.color.rgb2gray(img), cmap='gray')
@@ -540,10 +670,12 @@ def run_find_incisions(path: str, save_fig: bool, verbose: bool):
             )
             stitch_map = np.zeros(blurred.shape)
             for it in intersections_tuples:
-                rr, cc = skimage.draw.line(it[1][0], it[1][1], it[2][0], it[2][1])
+                rr, cc = skimage.draw.line(
+                    it[1][0], it[1][1], it[2][0], it[2][1]
+                )
                 stitch_map[rr, cc] = np.maximum(stitch_map[rr, cc], it[4])
             plt.imshow(stitch_map, alpha=1.0 * (stitch_map > 0), cmap='winter')
-            plt.title("Final result")
-            plt.suptitle(f"Img : {path}")
+            plt.title('Final result')
+            plt.suptitle(f'Img : {path}')
 
             plt.show()
