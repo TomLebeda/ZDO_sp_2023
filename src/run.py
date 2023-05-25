@@ -35,14 +35,11 @@ print(f"Save figure:\t {save_fig}")
 print(f"Input files:\t {input_files}")
 print('-' * CHAR_LEN)
 
-# FOLDER = './input_images/'
 FOLDER = ""
-
 
 output_data = list()
 
 for file_name in input_files:
-
     data = init_data()
     data['filename'] = file_name
     try:
@@ -58,7 +55,7 @@ for file_name in input_files:
 
     output_data.append(data)
 
-print(output_data)
+# print(output_data)
 with open(output_file, 'w', encoding='utf-8') as f:
     json.dump(output_data, f, ensure_ascii=False, indent=4)
     print(f'\nOutput data successfully saved: \t{output_file}\n')

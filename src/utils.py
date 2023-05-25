@@ -542,7 +542,7 @@ def find_angles(best_main_line_points: list, control_points, intersections_tuple
     """
     Nalezne pruseciky, uhly stehu a rezu vcetne vzdalenosti stehu od levehe pocatku jizvy.
 
-    PARAMTRY:
+    PARAMETRY:
     ------------------------
     :param best_main_line_points:  list indexu, pro nejepsi caru rezu -> control_points
     :param control_points:         kontrolni nalezene body
@@ -555,13 +555,11 @@ def find_angles(best_main_line_points: list, control_points, intersections_tuple
     x_list = list()
     angles = list()
 
-    # Prochazi jendotlive stehy
     for c in intersections_tuples:
         # point lines
         pA = [c[1][0], c[1][1]]
         pB = [c[2][0], c[2][1]]
 
-        # Prochazi jednotlivo polyliny rezu (jizvy)
         for i in range(len(best_main_line_points)-1):
             # point scar
             idx_start = best_main_line_points[i]
@@ -570,7 +568,7 @@ def find_angles(best_main_line_points: list, control_points, intersections_tuple
             p1 = [control_points[idx_end].x, control_points[idx_end].y]
 
             (xi, yi, valid, r, s) = intersectLines(p0, p1, pA, pB)
-            if valid == 1:    # pokud steh a polyline se protínaji -> prusecik
+            if valid == 1:    # if stitch and polyline instersect -> intersection point
                 y_list.append(yi)
                 x_list.append(xi)
                 angle = calculate_angle(p0, p1, pA, pB)

@@ -1,14 +1,7 @@
-# import xmltodict
+import xmltodict
 from matplotlib import pyplot as plt
 from utils import *
 import time
-import os
-
-# ANNOTATION_PATH = '/home/tom/School/FAV/8_semestr/ZDO/ZDO_sp_2023/data/annotations.xml'
-# IMAGES_PATH = '/home/tom/School/FAV/8_semestr/ZDO/ZDO_sp_2023/data/images/default/'
-
-ANNOTATION_PATH = 'data/annotations.xml'
-IMAGES_PATH = 'data/images/default/'
 
 BLUR_INTENSITY = 2   # blur intensity for control point searching
 CONTROL_POINT_MIN_DIST = 1   # minimal distance for control points
@@ -29,16 +22,10 @@ STITCH_ANGLE_COUNT = (
     20  # how many angles to try when detecting stitch-line angles
 )
 
-# with open(ANNOTATION_PATH) as f:
-#     doc = xmltodict.parse(f.read())
-
-# imgs_annotated = doc['annotations']['image']
-
 # explore_rgb_channels(list(range(50)), imgs_annotated, IMAGES_PATH)
 # explore_blobs(list(range(50)), imgs_annotated, IMAGES_PATH)
 # explore_hsv_channels(list(range(100)), imgs_annotated, IMAGES_PATH)
 # explore_thresholding(GOOD_IMAGES_ID, imgs_annotated, IMAGES_PATH, 10)
-
 
 def init_data():
     data = dict()
@@ -51,16 +38,15 @@ def init_data():
 
 def run_find_incisions(path: str, save_fig: bool, verbose: bool):
     # load the image
-<<<<<<< HEAD
-    img_ID = os.path.basename(os.path.normpath(path))
-    if not verbose:
-        print(f"processing {img_ID}...")
+    img_ID = path.split('/')[-1]
     t0 = time.time()
     if verbose:
         print(f'Loading image {path}... ')
     img = skimage.io.imread(path)
     if img.shape[0] > img.shape[1]:
-        print('Warning: Vertical image detected, will rotate by 90 degrees.')
+        print(
+            'Warning: Vertical image detected, will rotate by 90 degrees.'
+        )
         img = skimage.transform.rotate(img, 90.0, resize=True)
     if verbose:
         print(f'Done ({(time.time() - t0):.4f} s)')
@@ -71,13 +57,6 @@ def run_find_incisions(path: str, save_fig: bool, verbose: bool):
 
     # get the control points and associated images
     if verbose:
-=======
-    # for img_ID in [1, 11, 37, 3, 41, 8]:
-    for img_ID in range(1):
-        # img_ID = 1
-        img_fname = imgs_annotated[img_ID]['@name']
-        img = skimage.io.imread(IMAGES_PATH + img_fname)
->>>>>>> master
         t0 = time.time()
         print(f'\nExtracting control points... ')
     xy, blurred, masked, masked_contrast = get_control_points(
@@ -99,7 +78,9 @@ def run_find_incisions(path: str, save_fig: bool, verbose: bool):
         print(f'\nProcessing control points... ')
     control_point_scores = np.zeros(len(xy))
     for i, c in enumerate(xy):
-        score = compute_score(masked, control_points_score_kernel, c[0], c[1])
+        score = compute_score(
+            masked, control_points_score_kernel, c[0], c[1]
+        )
         control_point_scores[i] = score
         control_points.append(ControlPoint(c[0], c[1], score))
     control_points.sort(key=lambda c: c.score, reverse=True)
@@ -189,7 +170,9 @@ def run_find_incisions(path: str, save_fig: bool, verbose: bool):
     # combine the brightness and angle scores into a final scalar
     if verbose:
         t0 = time.time()
-        print(f'\nCombining brightness and angle costs into final score...')
+        print(
+            f'\nCombining brightness and angle costs into final score...'
+        )
     line_final_score_matrix = np.zeros((cp_count, cp_count))
     for i in range(len(control_points)):
         for j in range(i, len(control_points)):
@@ -308,8 +291,12 @@ def run_find_incisions(path: str, save_fig: bool, verbose: bool):
             p2 = control_points[max_idx]
             main_line_points.append(max_idx)
             rr, cc = skimage.draw.line(p1.x, p1.y, p2.x, p2.y)
-            connect_lmap[rr, cc] = np.maximum(linemap_angles[rr, cc], max_val)
-            main_line_total_cost += line_brightness_cost_matrix[lb, max_idx]
+            connect_lmap[rr, cc] = np.maximum(
+                linemap_angles[rr, cc], max_val
+            )
+            main_line_total_cost += line_brightness_cost_matrix[
+                lb, max_idx
+            ]
             lb = max_idx
         while True:
             candidates = np.copy(line_final_score_matrix[rb, :])
@@ -329,8 +316,12 @@ def run_find_incisions(path: str, save_fig: bool, verbose: bool):
             p2 = control_points[max_idx]
             main_line_points.insert(0, max_idx)
             rr, cc = skimage.draw.line(p1.x, p1.y, p2.x, p2.y)
-            connect_lmap[rr, cc] = np.maximum(linemap_angles[rr, cc], max_val)
-            main_line_total_cost += line_brightness_cost_matrix[lb, max_idx]
+            connect_lmap[rr, cc] = np.maximum(
+                linemap_angles[rr, cc], max_val
+            )
+            main_line_total_cost += line_brightness_cost_matrix[
+                lb, max_idx
+            ]
             rb = max_idx
         if main_line_total_cost > best_main_line_score:
             best_main_line_score = main_line_total_cost
@@ -383,6 +374,7 @@ def run_find_incisions(path: str, save_fig: bool, verbose: bool):
     angles = np.linspace(0.25, 0.75, STITCH_ANGLE_COUNT)
     intersections_tuples = []
     for i, c in enumerate(intersections):
+        map = np.zeros(blurred.shape)
         best_score = 0
         best_angle = 0
         best_T = [0, 0]
@@ -549,7 +541,7 @@ def run_find_incisions(path: str, save_fig: bool, verbose: bool):
         plt.imshow(skimage.color.rgb2gray(img), cmap='gray')
         plt.imshow(blurmap, alpha=blurmap / np.max(blurmap), cmap='winter')
         for c in intersections:
-            plt.plot(c.y, c.x, 'r.')
+            plt.plot(c.y, c.x, 'r*')
         plt.axis('off')
         if plt.gca().get_legend() is not None:
             plt.gca().get_legend().remove()
@@ -562,7 +554,6 @@ def run_find_incisions(path: str, save_fig: bool, verbose: bool):
         )
         plt.clf()
 
-<<<<<<< HEAD
         plt.imshow(skimage.color.rgb2gray(img), cmap='gray')
         plt.imshow(
             1.0 * (best_main_line_map > 0),
@@ -571,7 +562,9 @@ def run_find_incisions(path: str, save_fig: bool, verbose: bool):
         )
         stitch_map = np.zeros(blurred.shape)
         for it in intersections_tuples:
-            rr, cc = skimage.draw.line(it[1][0], it[1][1], it[2][0], it[2][1])
+            rr, cc = skimage.draw.line(
+                it[1][0], it[1][1], it[2][0], it[2][1]
+            )
             stitch_map[rr, cc] = np.maximum(stitch_map[rr, cc], it[4])
         plt.imshow(
             1.0 * (stitch_map > 0),
@@ -591,6 +584,26 @@ def run_find_incisions(path: str, save_fig: bool, verbose: bool):
         plt.clf()
 
     if verbose:
+        # print(f"final scar polyline:")
+        # for c in best_main_line_points:
+        #     # c je index do control_points
+        #     # control_points je list objektů ControlPoint (z utils)
+        #     print(f"\t[{control_points[c].x}, {control_points[c].y}]")
+        # print(f"final intersections:")
+        # for c in intersections_tuples:
+        #     # c je tuple, který obsahuje (v tomhle pořadí):
+        #     # 0 -> ControlPoint, který je samotný průsečík
+        #     # 1 -> bod T, který je jedním z okrajových bodů úsečky, která je steh
+        #     #      většinou je na horním nebo dolním okraji obrázku
+        #     # 2 -> bod R, který je druhým bodem úsečky stehu (spolu s T tvoří úsečku stehy)
+        #     # body R a T jsou dvouprvková pole [x y]
+        #     # 3 -> úhel úsečky, nicméně v ezoterickém formátu, nejsou to ani úhly, ani radiány
+        #     # 4 -> skóre úsečky, to tě asi tady nebude zajímat
+        #     print(f"\t[{c[0].x}, {c[0].y}]")
+        # print(f"final stitch lines:")
+        # for c in intersections_tuples:
+        #     print(f"\t[{c[1][0]}, {c[1][1]}] -- [{c[2][0]}, {c[2][1]}]")
+
         plt.subplot(4, 2, 1)
         plt.imshow(img)
         plt.title('Original image')
@@ -642,105 +655,20 @@ def run_find_incisions(path: str, save_fig: bool, verbose: bool):
         )
         stitch_map = np.zeros(blurred.shape)
         for it in intersections_tuples:
-            rr, cc = skimage.draw.line(it[1][0], it[1][1], it[2][0], it[2][1])
+            rr, cc = skimage.draw.line(
+                it[1][0], it[1][1], it[2][0], it[2][1]
+            )
             stitch_map[rr, cc] = np.maximum(stitch_map[rr, cc], it[4])
         plt.imshow(stitch_map, alpha=1.0 * (stitch_map > 0), cmap='winter')
         plt.title('Final result')
         plt.suptitle(f'Img : {path}')
 
         plt.show()
-=======
-        if verbose:
-            print(f"final scar polyline:")
-            for c in best_main_line_points:
-                # c je index do control_points
-                # control_points je list objektů ControlPoint (z utils)
-                print(f"\t[{control_points[c].x}, {control_points[c].y}]")
-            print(f"final intersections:")
-            for c in intersections_tuples:
-                # c je tuple, který obsahuje (v tomhle pořadí):
-                # 0 -> ControlPoint, který je samotný průsečík
-                # 1 -> bod T, který je jedním z okrajových bodů úsečky, která je steh
-                #      většinou je na horním nebo dolním okraji obrázku
-                # 2 -> bod R, který je druhým bodem úsečky stehu (spolu s T tvoří úsečku stehy)
-                # body R a T jsou dvouprvková pole [x y]
-                # 3 -> úhel úsečky, nicméně v ezoterickém formátu, nejsou to ani úhly, ani radiány
-                # 4 -> skóre úsečky, to tě asi tady nebude zajímat
-                print(f"\t[{c[0].x}, {c[0].y}]")
-            print(f"final stitch lines:")
-            for c in intersections_tuples:
-                print(f"\t[{c[1][0]}, {c[1][1]}] -- [{c[2][0]}, {c[2][1]}]")
 
-            plt.subplot(4, 2, 1)
-            plt.imshow(img)
-            plt.title('Original image')
-
-            plt.subplot(4, 2, 2)
-            plt.imshow(skimage.color.rgb2hsv(img)[:, :, 0], cmap='inferno')
-            # plt.imshow(masked, cmap='inferno')
-            plt.title('Hue channel')
-
-            plt.subplot(4, 2, 3)
-            # plt.imshow(skimage.color.rgb2hsv(img)[:, :, 1])
-            plt.imshow(masked, cmap='inferno')
-            plt.title('Masked')
-
-            plt.subplot(4, 2, 4)
-            plt.imshow(skimage.color.rgb2gray(img), cmap='gray')
-            plt.imshow(cpmap, alpha=1.0 * (cpmap > 0))
-            plt.title('Detected control points')
-
-            plt.subplot(4, 2, 5)
-            plt.imshow(skimage.color.rgb2gray(img), cmap='gray')
-            lmp_norm = linemap_finals / np.max(linemap_finals)
-            nz = np.nonzero(lmp_norm)
-            lmp_norm_a = np.copy(lmp_norm)
-            lmp_norm_a[nz] = lmp_norm[nz] * (2 / 3) + (1 / 3)
-            plt.imshow(lmp_norm, alpha=lmp_norm_a, cmap='jet')
-            plt.title('Constructed line map')
-
-            plt.subplot(4, 2, 6)
-            plt.imshow(skimage.color.rgb2gray(img), cmap='gray')
-            plt.imshow(
-                1.0 * (best_main_line_map > 0),
-                alpha=1.0 * (best_main_line_map > 0),
-                cmap='inferno',
-            )
-            plt.title('Detected main line')
-
-            plt.subplot(4, 2, 7)
-            plt.imshow(skimage.color.rgb2gray(img), cmap='gray')
-            plt.imshow(blurmap, alpha=blurmap / np.max(blurmap), cmap='winter')
-            for c in intersections:
-                plt.plot(c.y, c.x, 'r*')
-            plt.title('Detected crossections')
-
-            plt.subplot(4, 2, 8)
-            plt.imshow(skimage.color.rgb2gray(img), cmap='gray')
-            plt.imshow(
-                1.0 * (best_main_line_map > 0),
-                alpha=1.0 * (best_main_line_map > 0),
-                cmap='inferno',
-            )
-            stitch_map = np.zeros(blurred.shape)
-            for it in intersections_tuples:
-                rr, cc = skimage.draw.line(
-                    it[1][0], it[1][1], it[2][0], it[2][1]
-                )
-                stitch_map[rr, cc] = np.maximum(stitch_map[rr, cc], it[4])
-            plt.imshow(stitch_map, alpha=1.0 * (stitch_map > 0), cmap='winter')
-            plt.title('Final result')
-            plt.suptitle(f'Img : {path}')
-
-            plt.show()
-
-
-    #----------------------------------------------------------------------------
+    # final touches
     incision_polyline = list()
     for c in best_main_line_points:
         incision_polyline.append([int(control_points[c].x), int(control_points[c].y)])
 
     crossing_angles, crossing_positions = find_angles(best_main_line_points, control_points, intersections_tuples)
-    # ----------------------------------------------------------------------------
     return incision_polyline, crossing_positions, crossing_angles
->>>>>>> master
