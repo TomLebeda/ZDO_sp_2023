@@ -6,5 +6,6 @@ Requirements:
   - Python 3.10 
   - matplotlib, scikit-image
 
-Main method: run.py
-Seconday method: run_only_incision.py
+Main method: `run.py`
+
+Seconday method: `run_only_incision.py`
